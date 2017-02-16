@@ -11,5 +11,6 @@ enum avalon_errno {
     VCoreErr = 16384, PMUCrcFailed = 32768, InvaildPLLValue = 65536
 };
 
+extern string avalon_strerror(avalon_errno e);
 
 #endif //AMSD_AVALON_ERRNO_HPP

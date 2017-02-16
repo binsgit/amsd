@@ -107,7 +107,7 @@ static inline bool strs2nums(char *strs, void *nums, size_t numsize, bool issign
 	return true;
 }
 
-int api_parse_crap(char *crap, size_t crap_len, MM *mm) {
+int api_parse_crap(char *crap, size_t crap_len, Avalon7_MM *mm) {
 
 	char *holycrap = crap;
 	size_t holycrap_len = crap_len;

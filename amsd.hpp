@@ -34,6 +34,10 @@
 
 #include <libssh2.h>
 #include <jansson.h>
+#include <sqlite3.h>
+#include <mysql++/mysql++.h>
+
+#include "datatypes.hpp"
 
 #include "lib/cgminer_api.hpp"
 #include "lib/api_parser.hpp"
@@ -49,7 +53,6 @@ struct amsd_si_ctx {
     vector<uint8_t> *buf_out;
 };
 
-
 enum GeneralStatus {
     Uninitialized = 0,
     Connecting = 0x11, Connected = 0x12,
@@ -58,27 +61,48 @@ enum GeneralStatus {
     Finished = 0x101
 };
 
+
+class MMUpgrade;
+class SSHConnection;
+class SuperRTACSession;
+
+extern string path_runtime;
+extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
-extern char *strrnchr(char *s, int c, size_t len, size_t n);
-extern char *strrnchr(char *s, int c, size_t n);
 
+
+// Server
 extern int amsd_server();
 
+// Config
+extern int amsd_save_config(const char *filename="/etc/ams/config.json", bool nolock=false);
+extern int amsd_load_config(const char *filename="/etc/ams/config.json");
+
+// Database
+extern int amsd_db_init();
+
+// Utils
+extern char *strrnchr(char *s, int c, size_t len, size_t n);
+extern char *strrnchr(char *s, int c, size_t n);
 extern string amsd_random_string();
 extern string amsd_strerror(GeneralStatus status);
 extern string amsd_strerror(GeneralStatus status, int _errnooo);
 extern string amsd_strerror(GeneralStatus status, string xmsg);
 
+// Request
 extern int amsd_request_parse(char *inputstr, string &outputstr);
 
+// Operations
 extern void *amsd_operation_get(string name);
 extern bool amsd_operation_register(string name, int (*pfunc)(json_t*, json_t*&));
 
 extern int amsd_operation_fwver(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_mmupgrade(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_supertac(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_controller(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_issues(json_t *in_data, json_t *&out_data);
+
 
 class MMUpgrade {
 private:
@@ -196,7 +220,5 @@ public:
 
     void Exec();
 };
-
-
 
 #endif //AMSD_AMSD_HPP

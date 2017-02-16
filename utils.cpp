@@ -74,8 +74,12 @@ char *strrnchr(char *s, int c, size_t len, size_t n){
 		pos--;
 	}
 
+	pos++;
+
 	if (!cnt)
 		return NULL;
 	else
 		return pos;
 }
+
+
