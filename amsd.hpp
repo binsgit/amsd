@@ -35,9 +35,12 @@
 #include <libssh2.h>
 #include <jansson.h>
 #include <sqlite3.h>
+#include <event2/event.h>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
 #include <mysql++/mysql++.h>
 
-#include "datatypes.hpp"
+#include "data_collector/avalon.hpp"
 
 #include "lib/cgminer_api.hpp"
 #include "lib/api_parser.hpp"
@@ -51,6 +54,21 @@ struct amsd_si_ctx {
 
     vector<uint8_t> *buf_in;
     vector<uint8_t> *buf_out;
+};
+
+struct ReimuInetAddr {
+
+    uint64_t Addr = 0;
+    uint16_t Port = 0;
+
+    bool const operator==(const ReimuInetAddr &o) const{
+	    return Addr == o.Addr && Port == o.Port;
+    }
+
+    bool const operator<(const ReimuInetAddr &o) const{
+	    return Addr < o.Addr || (Addr == o.Addr && Port < o.Port);
+    }
+
 };
 
 enum GeneralStatus {
@@ -70,7 +88,11 @@ extern string path_runtime;
 extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
-
+extern sqlite3 *db_controller;
+extern sqlite3 *db_mod_policy;
+extern sqlite3 *db_summary;
+extern sqlite3 *db_pool;
+extern sqlite3 *db_module;
 
 // Server
 extern int amsd_server();

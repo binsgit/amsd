@@ -14,6 +14,6 @@ struct APIOutput {
 
 };
 
-extern int api_parse_crap(char *crap, size_t crap_len, Avalon7_MM *mm);
+extern int api_parse_crap(char *crap, size_t crap_len, Avalon_MM *mm);
 
 #endif //AMSD_API_PARSER_HPP

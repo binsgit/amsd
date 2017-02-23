@@ -5,8 +5,12 @@
 #include "amsd.hpp"
 
 #define spair		pair<sqlite3*, string>
-sqlite3 *db_controller = NULL;
 
+sqlite3 *db_controller = NULL;
+sqlite3 *db_mod_policy = NULL;
+sqlite3 *db_summary = NULL;
+sqlite3 *db_pool = NULL;
+sqlite3 *db_module = NULL;
 
 map<string, pair<sqlite3*, string>> db = {
 	{"controller", spair(NULL, "(Time UNSIGNED INT64, Addr BLOB(8), Port UNSIGNED INT16)")},
@@ -183,6 +187,12 @@ int amsd_db_init(){
 
 		fprintf(stderr, "amsd: database: opened database %s\n", it->first.c_str());
 	}
+
+	db_controller = db["controller"].first;
+	db_mod_policy = db["mod_policy"].first;
+	db_summary = db["summary"].first;
+	db_module = db["module"].first;
+	db_pool = db["pool"].first;
 
 	return 0;
 
