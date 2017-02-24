@@ -4,18 +4,20 @@
 
 #include "amsd.hpp"
 
-#define spair		pair<sqlite3*, string>
+#define spair		pair<string, string>
 
-sqlite3 *db_controller = NULL;
-sqlite3 *db_mod_policy = NULL;
-sqlite3 *db_summary = NULL;
-sqlite3 *db_pool = NULL;
-sqlite3 *db_module = NULL;
+const char *dbpath_controller = NULL;
+const char *dbpath_mod_policy = NULL;
+const char *dbpath_summary = NULL;
+const char *dbpath_pool = NULL;
+const char *dbpath_device = NULL;
+const char *dbpath_module = NULL;
 
-map<string, pair<sqlite3*, string>> db = {
-	{"controller", spair(NULL, "(Time UNSIGNED INT64, Addr BLOB(8), Port UNSIGNED INT16)")},
-	{"mod_policy", spair(NULL, "(Time UNSIGNED INT64, DNA BLOB(8), CriticalValue_Hashrate UNSIGNED INT32)")},
-	{"summary", spair(NULL, "(Time UNSIGNED INT64, Addr BLOB(8), Port UNSIGNED INT16, "
+map<string, pair<string, string>> db = {
+	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
+		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
+	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB(8), CriticalValue_Hashrate UNSIGNED INT32)")},
+	{"summary", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
 		"Elapsed INT, MHSav REAL, MHS5s REAL, MHS1m REAL, MHS5m REAL, MHS15m REAL, "
 		"FoundBlocks INT, Getworks INT, Accepted INT, Rejected INT, HardwareErrors INT, "
 		"Utility REAL, Discarded INT, Stale INT, GetFailures INT, LocalWork INT, RemoteFailures INT, "
@@ -23,17 +25,23 @@ map<string, pair<sqlite3*, string>> db = {
 		"DifficultyAccepted REAL, DifficultyRejected REAL, DifficultyStale REAL, "
 		"BestShare INT, DeviceHardware REAL, DeviceRejected REAL, PoolRejected REAL, PoolStale REAL, "
 		"Lastgetwork INT)")},
-	{"pool", spair(NULL, "(Time UNSIGNED INT64, Addr BLOB(8), Port UNSIGNED INT16, "
+	{"pool", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
 		"PoolID INT, URL TEXT, Status INT, Priority INT, Quota INT, LongPoll INT, "
 		"Getworks INT, Accepted INT, Rejected INT, Works INT, Discarded INT, "
 		"Stale INT, GetFailures INT, RemoteFailures INT, User TEXT, "
 		"LastShareTime INT64, Diff1Shares INT, ProxyType TEXT, Proxy TEXT, "
 		"DifficultyAccepted REAL, DifficultyRejected REAL, DifficultyStale REAL, "
-		"LastShareDifficulty REAL, WorkDifficulty REAL, HasStratum INT, StratumURL TEXT, "
+		"LastShareDifficulty REAL, WorkDifficulty REAL, HasStratum INT, StratumActive INT, StratumURL TEXT, "
 		"StratumDifficulty REAL, HasGBT INT, BestShare INT, PoolRejected REAL, PoolStale REAL, "
 		"BadWork INT, CurrentBlockHeight INT, CurrentBlockVersion INT)")},
-	{"module", spair(NULL, "(Time UNSIGNED INT64, Addr BLOB(8), Port UNSIGNED INT16, DeviceID INT, ModuleID INT, "
-		"Ver TEXT, DNA BLOB(8), Elapsed INT, MW_0 INT, MW_1 INT, MW_2 INT, MW_3 INT, LW INT, "
+	{"device", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
+		"ASC INT, Name TEXT, ID INT, Enabled TEXT, Status TEXT, Temperature REAL, "
+		"MHSav REAL, MHS5s REAL, MHS1m REAL, MHS5m REAL, MHS15m REAL, Accepted INT, Rejected INT, "
+		"HardwareErrors INT, Utility REAL, LastSharePool INT, LastShareTime INT64, TotalMH REAL, "
+		"Diff1Work INT, DifficultyAccepted REAL, DifficultyRejected REAL, LastShareDifficulty REAL, "
+		"NoDevice INT, LastValidWork INT, DeviceHardware REAL, DeviceRejected REAL, DeviceElapsed INT)")},
+	{"module", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, DeviceID INT, "
+		"ModuleID INT, Ver TEXT, DNA BLOB(8), Elapsed INT, MW_0 INT, MW_1 INT, MW_2 INT, MW_3 INT, LW INT, "
 		"MH_0 INT, MH_1 INT, MH_2 INT, MH_3 INT, HW INT, DH REAL, Temp INT, TMax INT, Fan INT, FanR INT, "
 		"Vi_0 INT, Vi_1 INT, Vi_2 INT, Vi_3 INT, Vo_0 INT, Vo_1 INT, Vo_2 INT, Vo_3 INT, "
 		"PLL_0_0 INT, PLL_0_1 INT, PLL_0_2 INT, PLL_0_3 INT, PLL_0_4 INT, PLL_0_5 INT, "
@@ -153,7 +161,9 @@ int amsd_db_init(){
 	string dbpath;
 
 	for (auto it = db.begin(); it != db.end(); ++it) {
+		sqlite3 *thisdb;
 		dbpath = path_runtime + it->first + ".db";
+		it->second.first = dbpath;
 
 		fd = open(dbpath.c_str(), O_RDWR);
 
@@ -166,11 +176,11 @@ int amsd_db_init(){
 			close(fd);
 		}
 
-		if (sqlite3_open_v2(dbpath.c_str(), &it->second.first,
+		if (sqlite3_open_v2(dbpath.c_str(), &thisdb,
 				    SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
 				    NULL)) {
 			fprintf(stderr, "amsd: database: failed to open database %s: %s\n", it->first.c_str(),
-				sqlite3_errmsg(it->second.first));
+				sqlite3_errmsg(thisdb));
 			return -1;
 		}
 
@@ -178,21 +188,23 @@ int amsd_db_init(){
 		if (!inited) {
 			string stmt = "PRAGMA journal_mode=WAL; CREATE TABLE " + it->first + " " + it->second.second;
 			fprintf(stderr, "amsd: database: initializing database %s\n", it->first.c_str());
-			if (sqlite3_exec(it->second.first, stmt.c_str(), NULL, NULL, NULL)) {
+			if (sqlite3_exec(thisdb, stmt.c_str(), NULL, NULL, NULL)) {
 				fprintf(stderr, "amsd: database: failed to initialize database %s: %s\n", it->first.c_str(),
-					sqlite3_errmsg(it->second.first));
+					sqlite3_errmsg(thisdb));
 				return -1;
 			}
 		}
 
-		fprintf(stderr, "amsd: database: opened database %s\n", it->first.c_str());
+		fprintf(stderr, "amsd: database: processed database %s\n", it->first.c_str());
+		sqlite3_close(thisdb);
 	}
 
-	db_controller = db["controller"].first;
-	db_mod_policy = db["mod_policy"].first;
-	db_summary = db["summary"].first;
-	db_module = db["module"].first;
-	db_pool = db["pool"].first;
+	dbpath_controller = db["controller"].first.c_str();
+	dbpath_mod_policy = db["mod_policy"].first.c_str();
+	dbpath_summary = db["summary"].first.c_str();
+	dbpath_module = db["module"].first.c_str();
+	dbpath_pool = db["pool"].first.c_str();
+	dbpath_device = db["device"].first.c_str();
 
 	return 0;
 

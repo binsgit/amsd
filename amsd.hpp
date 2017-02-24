@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <atomic>
+#include <regex>
 #include <shared_mutex>
 #include <sstream>
 #include <map>
@@ -38,7 +39,7 @@
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
-#include <mysql++/mysql++.h>
+//#include <mysql++/mysql++.h>
 
 #include "data_collector/avalon.hpp"
 
@@ -47,6 +48,9 @@
 #include "lib/avalon_errno.hpp"
 
 using namespace std;
+
+#define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
+#define db_close(s)	sqlite3_close(s)
 
 struct amsd_si_ctx {
     int fd;
@@ -88,11 +92,12 @@ extern string path_runtime;
 extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
-extern sqlite3 *db_controller;
-extern sqlite3 *db_mod_policy;
-extern sqlite3 *db_summary;
-extern sqlite3 *db_pool;
-extern sqlite3 *db_module;
+extern const char *dbpath_controller;
+extern const char *dbpath_mod_policy;
+extern const char *dbpath_summary;
+extern const char *dbpath_pool;
+extern const char *dbpath_device;
+extern const char *dbpath_module;
 
 // Server
 extern int amsd_server();
@@ -242,5 +247,7 @@ public:
 
     void Exec();
 };
+
+
 
 #endif //AMSD_AMSD_HPP

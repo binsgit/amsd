@@ -2,41 +2,33 @@
 // Created by root on 17-2-23.
 //
 
+#include <jansson.h>
 #include "../amsd.hpp"
 
-static const char *sqlstmt_insert_summary = "INSERT INTO summary " // 32 args
-	"(Time, Addr, Port, Elapsed, MHSav, MHS5s, MHS1m, MHS5m, MHS15m, FoundBlocks, Getworks, Accepted, Rejected, "
-	"HardwareErrors, Utility, Discarded, Stale, GetFailures, LocalWork, RemoteFailures, "
-	"NetworkBlocks, TotalMH, WorkUtility, DifficultyAccepted, DifficultyRejected, DifficultyStale, "
-	"BestShare, DeviceHardware, DeviceRejected, PoolRejected, PoolStale, Lastgetwork) VALUES "
-	"(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, "
-	"?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32)";
-
-static const char *sqlstmt_insert_pool = "INSERT INTO pool "
-	"(Time, Addr, Port, PoolID, URL, Status, Priority, Quota, LongPoll, Getworks, Accepted, Rejected, Works, "
-	"Discarded, Stale, GetFailures, RemoteFailures, User, LastShareTime64, Diff1Shares, ProxyType, Proxy, "
-	"DifficultyAccepted, DifficultyRejected, DifficultyStale, LastShareDifficulty, WorkDifficulty, HasStratum, "
-	"StratumURL, StratumDifficulty, HasGBT, BestShare, PoolRejected, PoolStale, BadWork, CurrentBlockHeight, "
-	"CurrentBlockVersion) VALUES "
-	"(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, "
-	"?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37)";
-
-static const vector<string> jentries_summary = {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
+static const CgMinerAPIQueryAutomator aq_summary("summary", {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
 						"Found Blocks", "Getworks", "Accepted", "Rejected", "Hardware Errors",
 						"Utility", "Discarded", "Stale", "Get Failures", "Local Work",
 						"Remote Failures", "Network Blocks", "Total MH", "Work Utility",
 						"Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
 						"Best Share", "Device Hardware%", "Device Rejected%", "Pool Rejected%",
-						"Pool Stale%", "Last getwork"};
+						"Pool Stale%", "Last getwork"});
 
-static const vector<string> jentries_pool = {"POOL", "URL", "Status", "Priority", "Quota", "Long Poll", "Getworks",
+static const CgMinerAPIQueryAutomator aq_pool("pool", {"POOL", "URL", "Status", "Priority", "Quota", "Long Poll", "Getworks",
 					     "Accepted", "Rejected", "Works", "Discarded", "Stale", "Get Failures",
 					     "Remote Failures", "User", "Last Share Time", "Diff1 Shares", "Proxy Type",
 					     "Proxy", "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
 					     "Last Share Difficulty", "Work Difficulty", "Has Stratum",
 					     "Stratum Active", "Stratum URL", "Stratum Difficulty", "Has GBT",
 					     "Best Share", "Pool Rejected%", "Pool Stale%", "Bad Work",
-					     "Current Block Height", "Current Block Version"};
+					     "Current Block Height", "Current Block Version"});
+
+static const CgMinerAPIQueryAutomator aq_device("device", {"ASC", "Name", "ID", "Enabled", "Status", "Temperature", "MHS av",
+					       "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m", "Accepted", "Rejected",
+					       "Hardware Errors", "Utility", "Last Share Pool", "Last Share Time",
+					       "Total MH", "Diff1 Work", "Difficulty Accepted", "Difficulty Rejected",
+					       "Last Share Difficulty", "No Device", "Last Valid Work",
+					       "Device Hardware%", "Device Rejected%", "Device Elapsed"});
+
 
 
 #define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
@@ -44,21 +36,42 @@ static const vector<string> jentries_pool = {"POOL", "URL", "Status", "Priority"
 #define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
 #define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
+CgMinerAPIQueryAutomator::CgMinerAPIQueryAutomator(string table_name, vector<string> json_keys) {
+	TableName = table_name;
+	JsonKeys = json_keys;
+}
 
+vector<string> CgMinerAPIQueryAutomator::GetJsonKeys() {
+	return JsonKeys;
+}
 
-void Avalon_Controller::APIBuf(struct evbuffer *input) {
+string CgMinerAPIQueryAutomator::GetInsertStmt() {
+	if (InsertStmt == "") {
+		InsertStmt = "INSERT INTO " + TableName + " VALUES (?1";
+		for (size_t i = 2; i <= JsonKeys.size()+3; i++) {
+			InsertStmt += ", ?" + to_string(i);
+		}
+		InsertStmt += ")";
+	}
 
+	fprintf(stderr, "amsd: caqa: %s\n", InsertStmt.c_str());
+
+	return InsertStmt;
 }
 
 
-CgMiner_APIBuf::CgMiner_APIBuf(CgMiner_APIBuf::CgMiner_APIBuf_Type t, time_t tm, uint64_t addr, uint16_t port) {
+CgMinerAPIProcessor::CgMinerAPIProcessor(CgMinerAPIProcessor::CgMiner_APIType t, time_t tm, const void *addr, size_t addrlen, uint16_t port) {
+
 	Type = t;
 	Time = tm;
-	Addr = addr;
+	AddrLen = addrlen;
+	memcpy(Addr, addr, addrlen);
 	Port = port;
 }
 
-void CgMiner_APIBuf::Process() {
+void CgMinerAPIProcessor::Process() {
+	fprintf(stderr, "amsd: CAP: process: type %d at %p\n", Type, this);
+
 	unsigned char *apidata = &Buf[0];
 
 	json_error_t jerror;
@@ -67,6 +80,7 @@ void CgMiner_APIBuf::Process() {
 
 	if (!j_apidata_root) {
 		// TODO
+		fprintf(stderr, "amsd: CAP: process: json error at %p: line %d: %s\n", this, jerror.line, jerror.text);
 		return;
 	}
 
@@ -77,25 +91,39 @@ void CgMiner_APIBuf::Process() {
 }
 
 
-void CgMiner_APIBuf::WriteDatabase() {
+void CgMinerAPIProcessor::WriteDatabase() {
+	sqlite3 *thisdb;
+
 	switch (Type) {
 		case Summary:
-			ProcessData("SUMMARY", db_summary, sqlstmt_insert_summary, jentries_summary);
-			break;
-		case EDevs:
+			db_open(dbpath_summary, thisdb);
+			ProcessData("SUMMARY", thisdb, aq_summary);
+			db_close(thisdb);
 			break;
 		case EStats:
+			cerr << "WARNING: Processing CRAP!\n";
+			ProcessHolyShittyCrap();
+			break;
+		case EDevs:
+			db_open(dbpath_device, thisdb);
+			ProcessData("DEVS", thisdb, aq_device);
+			db_close(thisdb);
 			break;
 		case Pools:
-			ProcessData("POOLS", db_pool, sqlstmt_insert_pool, jentries_pool);
+			db_open(dbpath_pool, thisdb);
+			ProcessData("POOLS", thisdb, aq_pool);
+			db_close(thisdb);
 			break;
 	}
 
 }
 
 
-void CgMiner_APIBuf::ProcessData(const char *api_obj_name, sqlite3 *db, const char *sql_stmt, const vector<string> &jentries) {
+void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgMinerAPIQueryAutomator aq) {
 	json_t *j_apidata_array = json_object_get(j_apidata_root, api_obj_name);
+	const char *sql_stmt = aq.GetInsertStmt().c_str();
+	vector<string> jentries = aq.GetJsonKeys();
+
 	sqlite3_stmt *stmt;
 	int narg;
 
@@ -121,7 +149,7 @@ void CgMiner_APIBuf::ProcessData(const char *api_obj_name, sqlite3 *db, const ch
 			return;
 
 		bi(1, Time);
-		bb(2, &Addr, 8);
+		bb(2, Addr,AddrLen);
 		bi(3, Port);
 
 		narg = 4;
@@ -140,6 +168,8 @@ void CgMiner_APIBuf::ProcessData(const char *api_obj_name, sqlite3 *db, const ch
 				bt(narg, json_string_value(buf0));
 			else if (json_is_real(buf0))
 				bd(narg, json_real_value(buf0));
+			else if (json_is_boolean(buf0))
+				bi(narg, json_boolean_value(buf0));
 
 			narg++;
 		}
@@ -151,3 +181,118 @@ void CgMiner_APIBuf::ProcessData(const char *api_obj_name, sqlite3 *db, const ch
 	}
 
 }
+
+void CgMinerAPIProcessor::ProcessHolyShittyCrap() {
+	json_t *j_apidata_array = json_object_get(j_apidata_root, "STATS");
+	sqlite3 *thisdb;
+	sqlite3_stmt *stmt;
+	std::vector<string> crap_line;
+
+
+	if (!json_is_array(j_apidata_array)) {
+		// TODO
+		return;
+	}
+
+	db_open(dbpath_module, thisdb);
+
+	if (!thisdb) {
+		// TODO
+		return;
+	}
+
+	json_t *j_apidata;
+	size_t j;
+
+	sqlite3_exec(thisdb, "BEGIN", NULL, NULL, NULL);
+
+	json_array_foreach(j_apidata_array, j, j_apidata) {
+
+		if (!json_is_object(j_apidata)) {
+			// TODO
+			continue;
+		}
+
+		json_t *j_mm_count = json_object_get(j_apidata, "MM Count");
+
+		if (!json_is_integer(j_mm_count)) {
+			// TODO
+			continue;
+		}
+
+		long mm_count = json_integer_value(j_mm_count);
+
+		for (long thismmid = 1; thismmid <= mm_count; thismmid++) {
+			string thismmkey = "MM ID" + to_string(thismmid);
+			json_t *j_this_mm_crap = json_object_get(j_apidata, thismmkey.c_str());
+
+			if (!json_is_string(j_this_mm_crap)) {
+				// TODO
+				continue;
+			}
+
+			string this_mm_crap = json_string_value(j_this_mm_crap);
+
+			smatch m;
+			if (!regex_search(this_mm_crap, m, crap_regex))
+				continue;
+
+			// LET'S STRUGGLE!!!
+			json_t *j_devid = json_object_get(j_apidata, "STATS");
+
+			if (!json_is_integer(j_devid))
+				continue;
+
+			sqlite3_prepare_v2(thisdb, crap_stmt.c_str(), -1, &stmt, NULL);
+
+			bi(1, Time);
+			bb(2, Addr, AddrLen);
+			bi(3, Port);
+
+			bi(4, json_integer_value(j_devid));
+			bi(5, thismmid);
+
+			// Ver ~ Elapsed
+			bt(6, m[1].str().c_str());
+			bt(7, m[2].str().c_str());
+			bt(8, m[3].str().c_str());
+
+			int di, li;
+
+			// MW
+			crap_line = Crap_LineBurster(m[4].str());
+			di = 9;
+			for (li=0; li<4; li++)
+				bi(di+li, stol(crap_line[0]));
+
+			bt(13, m[5].str().c_str());
+
+
+			sqlite3_step(stmt);
+			sqlite3_finalize(stmt);
+
+		}
+
+
+	}
+
+	sqlite3_exec(thisdb, "COMMIT", NULL, NULL, NULL);
+
+	db_close(thisdb);
+
+}
+
+vector<string> CgMinerAPIProcessor::Crap_LineBurster(string linestr) {
+	stringstream crap_sss(linestr);
+	vector<string> line_entries;
+
+	while (crap_sss.good()) {
+		string substr;
+		getline(crap_sss, substr, ' ');
+		if (substr.c_str()[0] > 0x20 )
+			line_entries.push_back(substr);
+	}
+
+	return line_entries;
+}
+

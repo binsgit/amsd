@@ -2,8 +2,6 @@
 
 pthread_attr_t _pthread_detached;
 
-using namespace mysqlpp;
-
 void amsd_datacollector_instance();
 
 int main() {
@@ -23,6 +21,9 @@ int main() {
 		fprintf (stderr, "amsd: Fatal: libssh2 initialization failed!!\n");
 		exit(2);
 	}
+
+	sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
+	sqlite3_initialize();
 
 	int rc_dbinit = amsd_db_init();
 

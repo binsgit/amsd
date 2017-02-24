@@ -5,6 +5,9 @@
 #include "amsd.hpp"
 
 #include <random>
+#include <netinet/in.h>
+
+const uint8_t zero4[4] = {0};
 
 string amsd_random_string(){
 	string ret = "";
@@ -53,7 +56,6 @@ string amsd_strerror(GeneralStatus status, int _errnooo) {
 string amsd_strerror(GeneralStatus status, string xmsg) {
 	return amsd_strerror(status) + ": " + xmsg;
 }
-
 
 // My strrnchr(): Returns a pointer to the n'st occurrence of the character c in the string s in reverse direction.
 
