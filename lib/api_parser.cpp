@@ -89,6 +89,9 @@ static inline bool strs2nums(char *strs, void *nums, size_t numsize, bool issign
 		numsize_real = numsize;
 
 	while (*sbuf) {
+		if (*sbuf == ']')
+			break;
+
 		if (*sbuf == ' ') {
 			*sbuf = 0;
 			if (*(sbuf+1) != ' ') {
@@ -115,7 +118,7 @@ int api_parse_crap(char *crap, size_t crap_len, Avalon_MM *mm) {
 	char *buf;
 
 	next("Ver");
-	mm->Ver = string(buf);
+	strncpy(mm->Ver, buf, 30);
 
 	next("DNA");
 	mm->DNA = strtoull(buf, NULL, 16);
@@ -184,16 +187,16 @@ int api_parse_crap(char *crap, size_t crap_len, Avalon_MM *mm) {
 	mm->Led = (uint16_t)strtoul(buf, NULL, 10);
 
 	next("MW0");
-	strs2nums(buf, mm->MW_[0], 4);
+	strs2nums(buf, mm->MW_[0], 22);
 
 	next("MW1");
-	strs2nums(buf, mm->MW_[1], 4);
+	strs2nums(buf, mm->MW_[1], 22);
 
 	next("MW2");
-	strs2nums(buf, mm->MW_[2], 4);
+	strs2nums(buf, mm->MW_[2], 22);
 
 	next("MW3");
-	strs2nums(buf, mm->MW_[3], 4);
+	strs2nums(buf, mm->MW_[3], 22);
 
 	next("TA");
 	mm->TA = (uint16_t)strtoul(buf, NULL, 10);

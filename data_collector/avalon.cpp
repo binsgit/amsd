@@ -6,28 +6,28 @@
 #include "../amsd.hpp"
 
 static const CgMinerAPIQueryAutomator aq_summary("summary", {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
-						"Found Blocks", "Getworks", "Accepted", "Rejected", "Hardware Errors",
-						"Utility", "Discarded", "Stale", "Get Failures", "Local Work",
-						"Remote Failures", "Network Blocks", "Total MH", "Work Utility",
-						"Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
-						"Best Share", "Device Hardware%", "Device Rejected%", "Pool Rejected%",
-						"Pool Stale%", "Last getwork"});
+							     "Found Blocks", "Getworks", "Accepted", "Rejected", "Hardware Errors",
+							     "Utility", "Discarded", "Stale", "Get Failures", "Local Work",
+							     "Remote Failures", "Network Blocks", "Total MH", "Work Utility",
+							     "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
+							     "Best Share", "Device Hardware%", "Device Rejected%", "Pool Rejected%",
+							     "Pool Stale%", "Last getwork"});
 
 static const CgMinerAPIQueryAutomator aq_pool("pool", {"POOL", "URL", "Status", "Priority", "Quota", "Long Poll", "Getworks",
-					     "Accepted", "Rejected", "Works", "Discarded", "Stale", "Get Failures",
-					     "Remote Failures", "User", "Last Share Time", "Diff1 Shares", "Proxy Type",
-					     "Proxy", "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
-					     "Last Share Difficulty", "Work Difficulty", "Has Stratum",
-					     "Stratum Active", "Stratum URL", "Stratum Difficulty", "Has GBT",
-					     "Best Share", "Pool Rejected%", "Pool Stale%", "Bad Work",
-					     "Current Block Height", "Current Block Version"});
+						       "Accepted", "Rejected", "Works", "Discarded", "Stale", "Get Failures",
+						       "Remote Failures", "User", "Last Share Time", "Diff1 Shares", "Proxy Type",
+						       "Proxy", "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
+						       "Last Share Difficulty", "Work Difficulty", "Has Stratum",
+						       "Stratum Active", "Stratum URL", "Stratum Difficulty", "Has GBT",
+						       "Best Share", "Pool Rejected%", "Pool Stale%", "Bad Work",
+						       "Current Block Height", "Current Block Version"});
 
 static const CgMinerAPIQueryAutomator aq_device("device", {"ASC", "Name", "ID", "Enabled", "Status", "Temperature", "MHS av",
-					       "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m", "Accepted", "Rejected",
-					       "Hardware Errors", "Utility", "Last Share Pool", "Last Share Time",
-					       "Total MH", "Diff1 Work", "Difficulty Accepted", "Difficulty Rejected",
-					       "Last Share Difficulty", "No Device", "Last Valid Work",
-					       "Device Hardware%", "Device Rejected%", "Device Elapsed"});
+							   "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m", "Accepted", "Rejected",
+							   "Hardware Errors", "Utility", "Last Share Pool", "Last Share Time",
+							   "Total MH", "Diff1 Work", "Difficulty Accepted", "Difficulty Rejected",
+							   "Last Share Difficulty", "No Device", "Last Valid Work",
+							   "Device Hardware%", "Device Rejected%", "Device Elapsed"});
 
 
 
@@ -187,6 +187,7 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() {
 	sqlite3 *thisdb;
 	sqlite3_stmt *stmt;
 	std::vector<string> crap_line;
+	Avalon_MM mmmm;
 
 
 	if (!json_is_array(j_apidata_array)) {
@@ -231,11 +232,11 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() {
 				continue;
 			}
 
-			string this_mm_crap = json_string_value(j_this_mm_crap);
+			memset(&mmmm, 0, sizeof(struct Avalon_MM));
 
-			smatch m;
-			if (!regex_search(this_mm_crap, m, crap_regex))
-				continue;
+			char *this_mm_crap = strdupa(json_string_value(j_this_mm_crap));
+
+			api_parse_crap(this_mm_crap, strlen(this_mm_crap)+1, &mmmm);
 
 			// LET'S STRUGGLE!!!
 			json_t *j_devid = json_object_get(j_apidata, "STATS");
@@ -253,20 +254,55 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() {
 			bi(5, thismmid);
 
 			// Ver ~ Elapsed
-			bt(6, m[1].str().c_str());
-			bt(7, m[2].str().c_str());
-			bt(8, m[3].str().c_str());
+			bt(6, mmmm.Ver);
+			bb(7, &mmmm.DNA, 8);
+			bi(8, mmmm.Elapsed);
 
 			int di, li;
 
 			// MW
-			crap_line = Crap_LineBurster(m[4].str());
 			di = 9;
 			for (li=0; li<4; li++)
-				bi(di+li, stol(crap_line[0]));
+				bi(di+li, mmmm.MW[li]);
 
-			bt(13, m[5].str().c_str());
+			bi(13, mmmm.LW);
 
+			di = 14;
+			for (li=0; li<4; li++)
+				bi(di+li, mmmm.MH[li]);
+
+			bi(18, mmmm.HW);
+			bd(19, mmmm.DH);
+			bd(20, mmmm.Temp);
+			bd(21, mmmm.TMax);
+			bi(22, mmmm.Fan);
+			bi(23, mmmm.FanR);
+
+			di = 24;
+			for (li=0; li<4; li++)
+				bi(di+li, mmmm.Vi[li]);
+
+			di = 28;
+			for (li=0; li<4; li++)
+				bi(di+li, mmmm.Vo[li]);
+
+			di = 32;
+
+			int li2;
+
+			for (li=0; li<4; li++)
+				for (li2=0; li2<6; li2++)
+					bi(di+li*6+li2, mmmm.PLL[li][li2]);
+
+			bd(56, mmmm.GHSmm);
+			bd(57, mmmm.WU);
+			bd(58, mmmm.Freq);
+			bi(59, mmmm.PG);
+			bi(60, mmmm.Led);
+
+//			for (li=0; li<3; li++)
+//				for (li2=0; li2<6; li2++)
+//					bi(di+li*6+li2, mmmm.PLL[li][li2]);
 
 			sqlite3_step(stmt);
 			sqlite3_finalize(stmt);

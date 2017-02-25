@@ -46,6 +46,7 @@ static void event_cb(struct bufferevent *bev, short events, void *ptr){
 		fprintf(stderr,"amsd: datacollector: buffer event %p done\n", bev);
 		unsigned char *s = &apibuf->Buf[0];
 		puts((const char *)s);
+		apibuf->Buf.push_back(0);
 		apibuf->Process();
 		delete apibuf;
 		bufferevent_free(bev);
@@ -70,10 +71,8 @@ static void conn_readcb(struct bufferevent *bev, void *user_data){
 		while (1) {
 			n = bufferevent_read(bev, buf, sizeof(buf));
 			fprintf(stderr,"amsd: datacollector: buffer event %p read %zu bytes\n", bev, n);
-			if (n <= 0) {
-				apibuf->Buf.push_back(0);
+			if (n == 0)
 				break;
-			}
 			apibuf->Buf.insert(apibuf->Buf.end(), buf, buf + n);
 		}
 

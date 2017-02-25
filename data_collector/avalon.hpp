@@ -9,15 +9,8 @@
 
 using namespace std;
 
-const regex crap_regex(R"(Ver\[(.*)\] DNA\[(.*)\] Elapsed\[(.*)\] MW\[(.*)\] LW\[(.*)\] MH\[(.*)\] HW\[(.*)\]
-DH\[(.*)\] Temp\[(.*)\] TMax\[(.*)\] Fan\[(.*)\] FanR\[(.*)\] Vi\[(.*)\] Vo\[(.*)\] PLL0\[(.*)\] PLL1\[(.*)\]
-PLL2\[(.*)\] PLL3\[(.*)\] GHSmm\[(.*)\] WU\[(.*)\] Freq\[(.*)\] PG\[(.*)\] Led\[(.*)\] MW0\[(.*)\] MW1\[(.*)\]
-MW2\[(.*)\] MW3\[(.*)\] TA\[(.*)\] ECHU\[(.*)\] ECMM\[(.*)\] SF0\[(.*)\] SF1\[(.*)\] SF2\[(.*)\] SF3\[(.*)\]
-PMUV\[(.*)\] ERATIO0\[(.*)\] ERATIO1\[(.*)\] ERATIO2\[(.*)\] ERATIO3\[(.*)\] C_0_00\[(.*)\] C_1_00\[(.*)\]
-C_2_00\[(.*)\] C_3_00\[(.*)\] C_0_01\[(.*)\] C_1_01\[(.*)\] C_2_01\[(.*)\] C_3_01\[(.*)\] C_0_02\[(.*)\] C_1_02\[(.*)\]
-C_2_02\[(.*)\] C_3_02\[(.*)\] C_0_03\[(.*)\] C_1_03\[(.*)\] C_2_03\[(.*)\] C_3_03\[(.*)\] C_0_04\[(.*)\] C_1_04\[(.*)\]
-C_2_04\[(.*)\] C_3_04\[(.*)\] GHSmm00\[(.*)\] GHSmm01\[(.*)\] GHSmm02\[(.*)\] GHSmm03\[(.*)\] FM\[(.*)\] CRC\[(.*)\]
-PVT_T\[(.*)\])", regex_constants::ECMAScript);
+const regex crap_regex(R"(Ver\[(.*)\] DNA\[(.*)\] Elapsed\[(.*)\] MW\[(.*)\] LW\[(.*)\] MH\[(.*)\] HW\[(.*)\] DH\[(.*)\] Temp\[(.*)\] TMax\[(.*)\] Fan\[(.*)\] FanR\[(.*)\] Vi\[(.*)\] Vo\[(.*)\] PLL0\[(.*)\] PLL1\[(.*)\] PLL2\[(.*)\] PLL3\[(.*)\] GHSmm\[(.*)\] WU\[(.*)\] Freq\[(.*)\] PG\[(.*)\] Led\[(.*)\] MW0\[(.*)\] MW1\[(.*)\] MW2\[(.*)\] MW3\[(.*)\] TA\[(.*)\] ECHU\[(.*)\] ECMM\[(.*)\] SF0\[(.*)\] SF1\[(.*)\] SF2\[(.*)\] SF3\[(.*)\] PMUV\[(.*)\] ERATIO0\[(.*)\] ERATIO1\[(.*)\] ERATIO2\[(.*)\] ERATIO3\[(.*)\] C_0_00\[(.*)\] C_1_00\[(.*)\] C_2_00\[(.*)\] C_3_00\[(.*)\] C_0_01\[(.*)\] C_1_01\[(.*)\] C_2_01\[(.*)\] C_3_01\[(.*)\] C_0_02\[(.*)\] C_1_02\[(.*)\] C_2_02\[(.*)\] C_3_02\[(.*)\] C_0_03\[(.*)\] C_1_03\[(.*)\] C_2_03\[(.*)\] C_3_03\[(.*)\] C_0_04\[(.*)\] C_1_04\[(.*)\] C_2_04\[(.*)\] C_3_04\[(.*)\] GHSmm00\[(.*)\] GHSmm01\[(.*)\] GHSmm02\[(.*)\] GHSmm03\[(.*)\] FM\[(.*)\] CRC\[(.*)\] PVT_T\[(.*)\])",
+		       regex_constants::ECMAScript);
 
 const string crap_stmt = "INSERT INTO module VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, "
 	"?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37,"
@@ -105,7 +98,7 @@ public:
 
 class Avalon_MM {
 public:
-    string Ver;
+    char Ver[32];
     uint64_t DNA;
     uint32_t Elapsed;
     uint32_t MW[4];
@@ -121,18 +114,18 @@ public:
     uint16_t Vo[4];
     uint16_t PLL[4][6];
     float GHSmm;
-    float GHSmm_[4][18];
+    float GHSmm_[4][22];
     float WU;
     float Freq;
     uint16_t PG;
     uint16_t Led;
-    uint32_t MW_[4][18];
+    uint32_t MW_[4][22];
     uint16_t TA;
     uint32_t ECHU[4];
     uint32_t ECMM;
     uint16_t SF[4][6];
     uint16_t PMUV[4]; // Hex value
-    double ERATIO[4][18];
+    double ERATIO[4][22];
     uint32_t C[4][5];
     uint16_t FM;
     uint32_t CRC[4];
