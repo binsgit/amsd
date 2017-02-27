@@ -62,6 +62,13 @@ void *amsd_server_instance_thread(void *data){
 }
 
 int amsd_server(){
+
+	/*
+	 * We are not using an event-based loop because this implementation still needs one thread per conn to
+	 * process a significant amount of data without letting the client wait for a long time. Also, in my opinion,
+	 * the context-switching mechanism implemented by the OS is much more efficient than a hand-crafted one.
+	 */
+
 	struct sockaddr_un listen_addr;
 	int fd_listener,fd_client,rc;
 
@@ -90,7 +97,6 @@ int amsd_server(){
 
 	chmod(socket_path.c_str(), 0666);
 
-	// We are not using epoll due to portability
 	while (1) {
 		if ( (fd_client = accept(fd_listener, NULL, NULL)) == -1) {
 			perror("accept error");

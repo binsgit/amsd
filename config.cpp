@@ -4,7 +4,7 @@
 
 #include "amsd.hpp"
 
-string path_runtime = "/var/run/ams/";
+string path_runtime = "/var/lib/ams/";
 
 map<string, map<string, string>> Config;
 static json_t *j_cfg = NULL;
@@ -12,15 +12,24 @@ static shared_timed_mutex cfglock;
 static json_t *j_newcfg, *j_newcfg_section;
 
 void amsd_init_config(){
+	Config["Farm"]["Name"] = "Miku's Farm";
+	Config["Farm"]["Description"] = "喵喵喵喵喵";
+
 	Config["Database"]["Host"] = "localhost";
 	Config["Database"]["Database"] = "ams";
 	Config["Database"]["User"] = "ams";
 	Config["Database"]["Password"] = "miaomiaomiao";
 
+	/*
+	 * SMTP STARTTLS isn't supported in this version due to a security flaw: Plaintext communication with the server
+	 * will continue if STARTTLS failed. (e.g. The connection got MITMed)
+	 *
+	 * P.S: I'm not a paranoid personality disorder patient!! :P
+	 */
 
 	Config["MailReport"]["SMTP_Use_SSL"] = "true";
-
 	Config["MailReport"]["SMTP_Server"] = "smtp.google.com";
+	Config["MailReport"]["SMTP_Port"] = "465";
 	Config["MailReport"]["SMTP_User"] = "reimu@gensokyo.moe";
 	Config["MailReport"]["SMTP_Password"] = "bakacirno233";
 
@@ -43,6 +52,9 @@ int amsd_load_config(const char *filename){
 		amsd_init_config();
 		amsd_save_config(filename, true);
 		ret = 1;
+		cerr << "\n\nNo config file found. Generated an example at " << filename << ".\n"
+		     << "Please edit it to reflect your configuration and restart me.\n";
+		exit(1);
 	} else {
 		const char *key_l1, *key_l2;
 		json_t *value_l1, *value_l2;

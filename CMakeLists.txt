@@ -1,7 +1,11 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.0)
 project(amsd)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g")
 
-set(SOURCE_FILES amsd.cpp server.cpp amsd.hpp ssh.cpp request.cpp operations.cpp operations/fwver.cpp operations/mmupgrade.cpp lib/cgminer_api.cpp operations/issues.cpp lib/avalon_errno.cpp lib/avalon_errno.hpp lib/cgminer_api.hpp lib/api_parser.cpp lib/api_parser.hpp operations/supertac.cpp utils.cpp operations/controller.cpp config.cpp data_collector/data_collector.cpp database.cpp data_collector/avalon.hpp data_collector/avalon.cpp amsd_cli.cpp report/report_mail.cpp)
+set(SOURCE_FILES amsd.cpp server.cpp amsd.hpp ssh.cpp request.cpp operations.cpp operations/fwver.cpp operations/mmupgrade.cpp lib/cgminer_api.cpp operations/issues.cpp lib/avalon_errno.cpp lib/avalon_errno.hpp lib/cgminer_api.hpp lib/api_parser.cpp lib/api_parser.hpp operations/supertac.cpp utils.cpp operations/controller.cpp config.cpp core/data_collector.cpp database.cpp core/data_collector.hpp core/report_mail.cpp lib/rfc1342.cpp lib/rfc1342.hpp lib/rfc3339.cpp lib/rfc3339.hpp)
+
 add_executable(amsd ${SOURCE_FILES})
+add_executable(amsd_cli amsd_cli.cpp)
+
+target_link_libraries(amsd pthread jansson ssh2 sqlite3 event curl b64)

@@ -36,13 +36,17 @@
 #include <libssh2.h>
 #include <jansson.h>
 #include <sqlite3.h>
+#include <b64/encode.h>
+#include <curl/curl.h>
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
-//#include <mysql++/mysql++.h>
 
-#include "data_collector/avalon.hpp"
 
+#include "core/data_collector.hpp"
+
+#include "lib/rfc1342.hpp"
+#include "lib/rfc3339.hpp"
 #include "lib/cgminer_api.hpp"
 #include "lib/api_parser.hpp"
 #include "lib/avalon_errno.hpp"
@@ -94,15 +98,22 @@ extern string path_runtime;
 extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
+extern time_t last_collect_time;
+extern shared_timed_mutex lock_datacollector;
+
 extern const char *dbpath_controller;
 extern const char *dbpath_mod_policy;
 extern const char *dbpath_summary;
 extern const char *dbpath_pool;
 extern const char *dbpath_device;
-extern const char *dbpath_module;
+extern const char *dbpath_module_avalon7;
 
 // Server
 extern int amsd_server();
+
+// Core
+extern void amsd_datacollector();
+extern void amsd_report_mail();
 
 // Config
 extern int amsd_save_config(const char *filename="/etc/ams/config.json", bool nolock=false);

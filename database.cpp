@@ -11,12 +11,12 @@ const char *dbpath_mod_policy = NULL;
 const char *dbpath_summary = NULL;
 const char *dbpath_pool = NULL;
 const char *dbpath_device = NULL;
-const char *dbpath_module = NULL;
+const char *dbpath_module_avalon7 = NULL;
 
 map<string, pair<string, string>> db = {
-	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
+	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
-	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB(8), CriticalValue_Hashrate UNSIGNED INT32)")},
+	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB, CriticalValue_Hashrate UNSIGNED INT32)")},
 	{"summary", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
 		"Elapsed INT, MHSav REAL, MHS5s REAL, MHS1m REAL, MHS5m REAL, MHS15m REAL, "
 		"FoundBlocks INT, Getworks INT, Accepted INT, Rejected INT, HardwareErrors INT, "
@@ -40,7 +40,7 @@ map<string, pair<string, string>> db = {
 		"HardwareErrors INT, Utility REAL, LastSharePool INT, LastShareTime INT64, TotalMH REAL, "
 		"Diff1Work INT, DifficultyAccepted REAL, DifficultyRejected REAL, LastShareDifficulty REAL, "
 		"NoDevice INT, LastValidWork INT, DeviceHardware REAL, DeviceRejected REAL, DeviceElapsed INT)")},
-	{"module", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, DeviceID INT, "
+	{"module_avalon7", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, DeviceID INT, "
 		"ModuleID INT, Ver TEXT, DNA BLOB(8), Elapsed INT, MW_0 INT, MW_1 INT, MW_2 INT, MW_3 INT, LW INT, "
 		"MH_0 INT, MH_1 INT, MH_2 INT, MH_3 INT, HW INT, DH REAL, Temp INT, TMax INT, Fan INT, FanR INT, "
 		"Vi_0 INT, Vi_1 INT, Vi_2 INT, Vi_3 INT, Vo_0 INT, Vo_1 INT, Vo_2 INT, Vo_3 INT, "
@@ -202,7 +202,7 @@ int amsd_db_init(){
 	dbpath_controller = db["controller"].first.c_str();
 	dbpath_mod_policy = db["mod_policy"].first.c_str();
 	dbpath_summary = db["summary"].first.c_str();
-	dbpath_module = db["module"].first.c_str();
+	dbpath_module_avalon7 = db["module_avalon7"].first.c_str();
 	dbpath_pool = db["pool"].first.c_str();
 	dbpath_device = db["device"].first.c_str();
 
