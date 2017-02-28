@@ -11,7 +11,7 @@ string rfc3339_strftime(time_t timeee){
 
 	tm tmtm;
 	localtime_r(&timeee, &tmtm);
-	strftime(sbuf, 46, "%Y-%m-%d %T %z", &tmtm);
+	strftime(sbuf, 46, "%Y-%m-%d %T", &tmtm);
 
 	return string(sbuf);
 }

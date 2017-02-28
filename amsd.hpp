@@ -142,7 +142,7 @@ extern int amsd_operation_mmupgrade(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_supertac(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_controller(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_issues(json_t *in_data, json_t *&out_data);
-
+extern int amsd_operation_mailreport(json_t *in_data, json_t *&out_data);
 
 class MMUpgrade {
 private:

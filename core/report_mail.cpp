@@ -39,13 +39,16 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
 
 }
 
-static struct report mailbody_generator(string farm_name){
+static struct report mailreport_generator(string farm_name){
 
+	timeval tv_begin, tv_end, tv_diff;
 	report ret;
 
 	char sbuf16[16];
 	double dbuf;
 	int64_t ibuf;
+
+	gettimeofday(&tv_begin, NULL);
 
 	ret.mailbody = "<html>"
 			       "<head>"
@@ -70,7 +73,7 @@ static struct report mailbody_generator(string farm_name){
 
 	ret.mailbody += "<table><tbody>"
 				"<tr><th>数据采集时间</th><th>" + rfc3339_strftime(last_collect_time) + "</th></tr>"
-				"<tr><th>当前总算力</th><th>";
+				"<tr><th>总算力</th><th>";
 
 	sqlite3 *thissummarydb, *thismoduledb, *thispooldb;
 
@@ -83,15 +86,15 @@ static struct report mailbody_generator(string farm_name){
 	sqlite3_bind_int64(stmtbuf, 1, last_collect_time);
 	sqlite3_step(stmtbuf);
 	dbuf = sqlite3_column_double(stmtbuf, 0);
-	snprintf(sbuf16, 14, "%.2f", dbuf/1000000);
+	snprintf(sbuf16, 14, "%.2f", dbuf/1000000000);
 	ret.hashrate += string(sbuf16);
 	ret.hashrate += " PH/s";
 	snprintf(sbuf16, 14, "%.2f", dbuf/1000);
 	ret.mailbody += string(sbuf16);
 	ret.ctls += to_string(sqlite3_column_int64(stmtbuf, 1));
 	ret.mailbody += " GH/s</th></tr><tr><th>"
-				"当前控制器数量</th><th>" + ret.ctls
-			+ "</th></tr><tr><th>当前模组数量</th><th>";
+				"控制器数量</th><th>" + ret.ctls
+			+ "</th></tr><tr><th>模组数量</th><th>";
 	sqlite3_finalize(stmtbuf);
 
 
@@ -104,14 +107,14 @@ static struct report mailbody_generator(string farm_name){
 	ret.mailbody += ret.mods + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"
 					   "<table><thead>"
 					   "<tr><th>URL</th><th>用户</th><th>算力（GH/s）</th>"
-					   "<th>关联的控制器数量</th><th>关联的模组数量</th>"
+//					   "<th>关联的控制器数量</th><th>关联的模组数量</th>"
 					   "</tr>"
 					   "</thead><tbody>";
 	sqlite3_finalize(stmtbuf);
 
 	db_open(dbpath_pool, thispooldb);
 
-	sqlite3_prepare_v2(thispooldb, "SELECT DISTINCT(URL), User FROM pool WHERE LENGTH(URL) > 7 AND Time > ((SELECT Max(Time) FROM pool) - 86400)", -1, &stmtbuf, NULL);
+	sqlite3_prepare_v2(thispooldb, "SELECT URL, User, AVG(DifficultyAccepted) FROM pool WHERE LENGTH(URL) > 7 AND Time > ((SELECT Max(Time) FROM pool) - 86400) GROUP BY URL", -1, &stmtbuf, NULL);
 
 	while ( sqlite3_step(stmtbuf) == SQLITE_ROW ) {
 		ret.mailbody += "<tr><th>";
@@ -119,10 +122,11 @@ static struct report mailbody_generator(string farm_name){
 		ret.mailbody += "</th><th>";
 		ret.mailbody += (char *)sqlite3_column_text(stmtbuf,1);
 		ret.mailbody += "</th><th>";
-
-		ret.mailbody += "</th><th>";
-
-		ret.mailbody += "</th><th>";
+		snprintf(sbuf16, 14, "%.2f", sqlite3_column_double(stmtbuf, 2)/1000);
+		ret.mailbody += sbuf16;
+//		ret.mailbody += "</th><th>";
+//
+//		ret.mailbody += "</th><th>";
 
 		ret.mailbody += "</th></tr>";
 	}
@@ -133,7 +137,14 @@ static struct report mailbody_generator(string farm_name){
 
 	lock_datacollector.unlock();
 
-	ret.mailbody += "</tbody></table></body></html>";
+	ret.mailbody += "</tbody></table><br><i>Processed in ";
+
+	gettimeofday(&tv_end, NULL);
+	timersub(&tv_end, &tv_begin, &tv_diff);
+
+	snprintf(sbuf16, 14, "%zu.%zu", tv_diff.tv_sec, tv_diff.tv_usec);
+	ret.mailbody += sbuf16;
+	ret.mailbody += " seconds.</i></body></html>";
 
 	return ret;
 }
@@ -180,7 +191,7 @@ static int mailreporter_instance(){
 		localtime_r(&timenow, &localtime_meow);
 		strftime(datebuf, 46, "%a, %d %b %Y %X", &localtime_meow);
 
-		report thisrpt = mailbody_generator(farm_name);
+		report thisrpt = mailreport_generator(farm_name);
 
 		smtp_body.push_back("Date: " + string(datebuf) + " +0800\r\n");
 		smtp_body.push_back("To: " + mail_tos + "\r\n");
@@ -216,10 +227,12 @@ static int mailreporter_instance(){
 
 
 static void *mailreporter_thread(void *meow){
-
+	mailreporter_instance();
+	pthread_exit(NULL);
 }
 
 
 void amsd_report_mail(){
-	mailreporter_instance();
+	pthread_t tid;
+	pthread_create(&tid, &_pthread_detached, &mailreporter_thread, NULL);
 }

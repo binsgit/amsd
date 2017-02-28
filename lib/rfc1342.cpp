@@ -6,10 +6,7 @@
 #include "rfc1342.hpp"
 
 string rfc1342_encode_utf8(string s){
-
-
 	stringstream is(s), os;
-
 	base64::encoder be;
 
 	be.encode(is, os);
@@ -19,6 +16,5 @@ string rfc1342_encode_utf8(string s){
 	ret.pop_back();
 	ret += "?=";
 
-	cerr << "xxx: " << ret << "\n\n";
 	return ret;
 }
