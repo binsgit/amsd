@@ -73,7 +73,7 @@ int amsd_operation_controller(json_t *in_data, json_t *&out_data){
 				if (j_con_ip && j_con_port)
 					if (json_is_string(j_con_ip) && json_is_integer(j_con_port)) {
 						sqlite3_prepare_v2(thisdb, "INSERT INTO controller VALUES ("
-							"?1, ?2, ?3)", -1, &stmt, NULL);
+							"?1, ?2, ?3, 7)", -1, &stmt, NULL);
 
 						sqlite3_bind_int64(stmt, 1, timenow);
 						sqlite3_bind_int64(stmt, 3, json_integer_value(j_con_port));
