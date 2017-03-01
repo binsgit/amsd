@@ -53,9 +53,7 @@
 
 using namespace std;
 
-#define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL);\
-	if (s) sqlite3_exec(s, "PRAGMA journal_mode=WAL;", NULL, NULL, NULL)
-
+#define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
 #define db_close(s)	sqlite3_close(s)
 
 struct amsd_si_ctx {
