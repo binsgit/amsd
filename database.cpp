@@ -14,7 +14,7 @@ const char *dbpath_device = NULL;
 const char *dbpath_module_avalon7 = NULL;
 
 map<string, pair<string, string>> db = {
-	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT "
+	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
 	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB, CriticalValue_Hashrate UNSIGNED INT32)")},
 	{"summary", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
