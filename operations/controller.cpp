@@ -65,6 +65,8 @@ int amsd_operation_controller(json_t *in_data, json_t *&out_data){
 
 		timenow = time(NULL);
 
+		sqlite3_exec(thisdb, "BEGIN", NULL, NULL, NULL);
+
 		json_array_foreach(j_controllers, index, j_controller) {
 			if (json_is_object(j_controller)) {
 				j_con_ip = json_object_get(j_controller, "ip");
@@ -96,10 +98,14 @@ int amsd_operation_controller(json_t *in_data, json_t *&out_data){
 			}
 		}
 
+		sqlite3_exec(thisdb, "COMMIT", NULL, NULL, NULL);
+
 	} else if (op == "del") {
 		j_controllers = json_object_get(in_data, "controllers");
 		if (!j_controllers || !json_is_array(j_controllers))
 			return -1;
+
+		sqlite3_exec(thisdb, "BEGIN", NULL, NULL, NULL);
 
 		json_array_foreach(j_controllers, index, j_controller) {
 			if (json_is_object(j_controller)) {
@@ -131,6 +137,8 @@ int amsd_operation_controller(json_t *in_data, json_t *&out_data){
 					}
 			}
 		}
+
+		sqlite3_exec(thisdb, "COMMIT", NULL, NULL, NULL);
 
 	} else if (op == "wipe") {
 		sqlite3_exec(thisdb, "TRUNCATE controller", NULL, NULL, NULL);

@@ -298,33 +298,40 @@ void CgMinerAPIProcessor::WriteDatabase() {
 
 
 void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgMinerAPIQueryAutomator aq) {
-	json_t *j_apidata_array = json_object_get(j_apidata_root, api_obj_name);
+	json_t *j_apidata_array;
 	string sql_stmt = aq.GetInsertStmt();
 	vector<string> jentries = aq.GetJsonKeys();
-
-	sqlite3_stmt *stmt;
+	json_t *j_apidata;
+	size_t j;
+	sqlite3_stmt *stmt = NULL;
 	int narg;
+
+
+
+
+
+
+
+	j_apidata_array = json_object_get(j_apidata_root, api_obj_name);
 
 	if (!json_is_array(j_apidata_array)) {
 		// TODO
 		return;
 	}
 
-	json_t *j_apidata;
-
-	size_t j;
+	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 
 	json_array_foreach(j_apidata_array, j, j_apidata) {
 
 		if (!json_is_object(j_apidata)) {
 			// TODO
-			return;
+			goto end;
 		}
 
 		sqlite3_prepare_v2(db, sql_stmt.c_str(), -1, &stmt, NULL);
 
 		if (!stmt)
-			return;
+			goto end;
 
 		bi(1, StartTime);
 		bb(2, Remote_Addr,Remote_AddrLen);
@@ -337,7 +344,7 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 
 			if (!buf0) {
 				// TODO
-				return;
+				goto end;
 			}
 
 			if (json_is_integer(buf0))
@@ -352,13 +359,18 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 			narg++;
 		}
 
-		if (sqlite3_step(stmt))
-			cerr << "sqlite error: " << sqlite3_errmsg(db) << endl;
-
+		sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		stmt = NULL;
 
 	}
+
+	end:
+	if (stmt)
+		sqlite3_finalize(stmt);
+	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+	return;
+
 
 }
 
