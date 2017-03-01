@@ -75,6 +75,7 @@ private:
     vector<string> Crap_LineBurster(string linestr);
     json_t *j_apidata_root = NULL;
 
+    sqlite3 **DBHandles;
 
 public:
     enum CgMiner_APIType {
@@ -83,7 +84,7 @@ public:
 
     inline const char* APITypeString(CgMiner_APIType v);
 
-    CgMinerAPIProcessor(CgMinerAPIProcessor::CgMiner_APIType t, time_t tm, const void *addr, size_t addrlen, uint16_t port);
+    CgMinerAPIProcessor(CgMinerAPIProcessor::CgMiner_APIType t, sqlite3 **db_handles, time_t tm, const void *addr, size_t addrlen, uint16_t port);
 
     void Process();
 

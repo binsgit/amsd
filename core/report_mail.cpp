@@ -175,10 +175,11 @@ static int mailreporter_instance(){
 
 
 		if (strchr(mail_tos.c_str(),',')) {
-			stringstream mail_to_parser;
+			stringstream mail_to_parser(mail_tos);
 			while(mail_to_parser.good()) {
 				string substr;
 				getline(mail_to_parser, substr, ',');
+
 				recipients = curl_slist_append(recipients, strdupa(substr.c_str()));
 			}
 		} else {

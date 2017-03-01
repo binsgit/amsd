@@ -103,8 +103,20 @@ static void amsd_datacollector_instance(){
 	int inaddr_len, sockaddr_len;
 	char addrsbuf[INET6_ADDRSTRLEN];
 	int rc;
+	sqlite3 *db_handles[4] = {0};
 
 	last_collect_time = time(NULL);
+
+	db_open(dbpath_summary, db_handles[0]);
+	db_open(dbpath_module_avalon7, db_handles[1]);
+	db_open(dbpath_device, db_handles[2]);
+	db_open(dbpath_pool, db_handles[3]);
+
+	for (size_t j = 0; j < sizeof(db_handles)/sizeof(sqlite3 *); j++) {
+		if (db_handles[j]) {
+			sqlite3_exec(db_handles[j], "BEGIN", NULL, NULL, NULL);
+		}
+	}
 
 	db_open(dbpath_controller, thisdb);
 
@@ -138,7 +150,7 @@ static void amsd_datacollector_instance(){
 				bufferevent_free(bebuf);
 				continue;
 			} else {
-				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, last_collect_time, remote_inaddr, (size_t)inaddr_len, remote_port);
+				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, db_handles, last_collect_time, remote_inaddr, (size_t)inaddr_len, remote_port);
 				bufferevent_setcb(bebuf, conn_readcb, conn_writecb, event_cb, abuf);
 				bufferevent_enable(bebuf, EV_READ | EV_WRITE);
 			}
@@ -152,6 +164,14 @@ static void amsd_datacollector_instance(){
 
 	event_base_dispatch(eventbase);
 	event_base_free(eventbase);
+
+	for (size_t j = 0; j < sizeof(db_handles)/sizeof(sqlite3 *); j++) {
+		if (db_handles[j]) {
+			sqlite3_exec(db_handles[j], "COMMIT", NULL, NULL, NULL);
+			db_close(db_handles[j]);
+		}
+	}
+
 }
 
 static void *amsd_datacollector_thread(void *meow){
@@ -233,9 +253,10 @@ string CgMinerAPIQueryAutomator::GetInsertStmt() {
 }
 
 
-CgMinerAPIProcessor::CgMinerAPIProcessor(CgMinerAPIProcessor::CgMiner_APIType t, time_t tm, const void *addr, size_t addrlen, uint16_t port) {
+CgMinerAPIProcessor::CgMinerAPIProcessor(CgMinerAPIProcessor::CgMiner_APIType t, sqlite3 **db_handles, time_t tm, const void *addr, size_t addrlen, uint16_t port) {
 	APIType = t;
 	StartTime = tm;
+	DBHandles = db_handles;
 	Remote_AddrLen = addrlen;
 	memcpy(Remote_Addr, addr, addrlen);
 	Remote_Port = port;
@@ -275,22 +296,16 @@ void CgMinerAPIProcessor::WriteDatabase() {
 
 	switch (APIType) {
 		case Summary:
-		db_open(dbpath_summary, thisdb);
-			ProcessData("SUMMARY", thisdb, aq_summary);
-			db_close(thisdb);
+			ProcessData("SUMMARY", DBHandles[0], aq_summary);
 			break;
 		case EStats:
 			ProcessHolyShittyCrap(); // The API output is NOT easy to parse nor easy to read!!!
 			break;
 		case EDevs:
-		db_open(dbpath_device, thisdb);
-			ProcessData("DEVS", thisdb, aq_device);
-			db_close(thisdb);
+			ProcessData("DEVS", DBHandles[2], aq_device);
 			break;
 		case Pools:
-		db_open(dbpath_pool, thisdb);
-			ProcessData("POOLS", thisdb, aq_pool);
-			db_close(thisdb);
+			ProcessData("POOLS", DBHandles[3], aq_pool);
 			break;
 	}
 
@@ -307,11 +322,6 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 	int narg;
 
 
-
-
-
-
-
 	j_apidata_array = json_object_get(j_apidata_root, api_obj_name);
 
 	if (!json_is_array(j_apidata_array)) {
@@ -319,7 +329,6 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 		return;
 	}
 
-	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 
 	json_array_foreach(j_apidata_array, j, j_apidata) {
 
@@ -368,7 +377,7 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 	end:
 	if (stmt)
 		sqlite3_finalize(stmt);
-	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+
 	return;
 
 
@@ -377,7 +386,7 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 void CgMinerAPIProcessor::ProcessHolyShittyCrap() { // Special function designed to get rid of that shitty API output
 	// We are not using regex because it is too SLOW.
 	json_t *j_apidata_array = json_object_get(j_apidata_root, "STATS");
-	sqlite3 *thisdb;
+	sqlite3 *thisdb = DBHandles[1];
 	sqlite3_stmt *stmt;
 	Avalon_MM mmmm;
 
@@ -387,7 +396,6 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() { // Special function designed
 		return;
 	}
 
-	db_open(dbpath_module_avalon7, thisdb);
 
 	if (!thisdb) {
 		// TODO
@@ -396,8 +404,6 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() { // Special function designed
 
 	json_t *j_apidata;
 	size_t j;
-
-	sqlite3_exec(thisdb, "BEGIN", NULL, NULL, NULL);
 
 	json_array_foreach(j_apidata_array, j, j_apidata) {
 
@@ -503,10 +509,6 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() { // Special function designed
 
 
 	}
-
-	sqlite3_exec(thisdb, "COMMIT", NULL, NULL, NULL);
-
-	db_close(thisdb);
 
 }
 
