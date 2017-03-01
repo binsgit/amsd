@@ -299,7 +299,7 @@ void CgMinerAPIProcessor::WriteDatabase() {
 
 void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgMinerAPIQueryAutomator aq) {
 	json_t *j_apidata_array = json_object_get(j_apidata_root, api_obj_name);
-	const char *sql_stmt = aq.GetInsertStmt().c_str();
+	string sql_stmt = aq.GetInsertStmt();
 	vector<string> jentries = aq.GetJsonKeys();
 
 	sqlite3_stmt *stmt;
@@ -321,7 +321,7 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 			return;
 		}
 
-		sqlite3_prepare_v2(db, sql_stmt, -1, &stmt, NULL);
+		sqlite3_prepare_v2(db, sql_stmt.c_str(), -1, &stmt, NULL);
 
 		if (!stmt)
 			return;
@@ -352,7 +352,9 @@ void CgMinerAPIProcessor::ProcessData(const char *api_obj_name, sqlite3 *db, CgM
 			narg++;
 		}
 
-		sqlite3_step(stmt);
+		if (sqlite3_step(stmt))
+			cerr << "sqlite error: " << sqlite3_errmsg(db) << endl;
+
 		sqlite3_finalize(stmt);
 		stmt = NULL;
 
