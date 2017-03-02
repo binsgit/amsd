@@ -12,3 +12,18 @@ Implemented Functions
 ------------
 - Super RTAC: Execute scripts on remote machines in parallel & monitor realtime status
 - Query FW version
+- Data collection in parallel
+- Mail reporting
+
+Build
+------------
+Install packages:
+
+    apt-get install build-essential cmake libjansson-dev libssh2-1-dev libsqlite3-dev libevent-dev libcurl4-openssl-dev libb64-dev 
+
+Build:
+
+    mkdir build
+    cd build
+    cmake ..
+    make -j `nproc`
