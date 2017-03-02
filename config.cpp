@@ -8,17 +8,15 @@ string path_runtime = "/var/lib/ams/";
 
 map<string, map<string, string>> Config;
 static json_t *j_cfg = NULL;
-static shared_timed_mutex cfglock;
+shared_timed_mutex Lock_Config;
 static json_t *j_newcfg, *j_newcfg_section;
 
 void amsd_init_config(){
 	Config["Farm"]["Name"] = "Miku's Farm";
 	Config["Farm"]["Description"] = "喵喵喵喵喵";
 
-	Config["Database"]["Host"] = "localhost";
-	Config["Database"]["Database"] = "ams";
-	Config["Database"]["User"] = "ams";
-	Config["Database"]["Password"] = "miaomiaomiao";
+	Config["DataCollector"]["ConnTimeout"] = "15";
+	Config["DataCollector"]["CollectInterval"] = "600";
 
 	/*
 	 * SMTP STARTTLS isn't supported in this version due to a security flaw: Plaintext communication with the server
@@ -45,7 +43,7 @@ int amsd_load_config(const char *filename){
 
 	json_error_t err;
 
-	cfglock.lock();
+	Lock_Config.lock();
 	j_cfg = json_load_file(filename, 0, &err);
 
 	if (!j_cfg) {
@@ -71,14 +69,14 @@ int amsd_load_config(const char *filename){
 		}
 	}
 
-	cfglock.unlock();
+	Lock_Config.unlock();
 
 	return ret;
 }
 
 int amsd_save_config(const char *filename, bool nolock){
 	if (!nolock)
-		cfglock.lock();
+		Lock_Config.lock();
 
 	j_newcfg = json_object();
 
@@ -98,7 +96,7 @@ int amsd_save_config(const char *filename, bool nolock){
 	json_decref(j_newcfg);
 
 	if (!nolock)
-		cfglock.unlock();
+		Lock_Config.unlock();
 
 	return ret;
 }

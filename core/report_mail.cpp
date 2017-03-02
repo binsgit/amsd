@@ -69,7 +69,7 @@ static struct report mailreport_generator(string farm_name){
 			       "<h3><b>AMS报告：" + farm_name + "</b></h3>"
 			       "<h4><b>当前概况</b></h4>";
 
-	lock_datacollector.lock();
+	Lock_DataCollector.lock();
 
 	ret.mailbody += "<table><tbody>"
 				"<tr><th>数据采集时间</th><th>" + rfc3339_strftime(last_collect_time) + "</th></tr>"
@@ -135,7 +135,7 @@ static struct report mailreport_generator(string farm_name){
 	db_close(thissummarydb);
 	db_close(thispooldb);
 
-	lock_datacollector.unlock();
+	Lock_DataCollector.unlock();
 
 	ret.mailbody += "</tbody></table><br><i>Processed in ";
 

@@ -97,7 +97,9 @@ extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
 extern time_t last_collect_time;
-extern shared_timed_mutex lock_datacollector;
+
+extern shared_timed_mutex Lock_DataCollector;
+extern shared_timed_mutex Lock_Config;
 
 extern const char *dbpath_controller;
 extern const char *dbpath_mod_policy;
@@ -141,6 +143,7 @@ extern int amsd_operation_supertac(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_controller(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_issues(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_mailreport(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_config(json_t *in_data, json_t *&out_data);
 
 class MMUpgrade {
 private:

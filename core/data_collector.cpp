@@ -11,11 +11,12 @@ static const string api_cmd_pools = "{\"command\":\"pools\"}";
 
 time_t last_collect_time = 0;
 
-shared_timed_mutex lock_datacollector;
+shared_timed_mutex Lock_DataCollector;
 
 map<ReimuInetAddr, Avalon_Controller> Controllers;
 
 uint amsd_datacollection_interval = 120;
+struct timeval amsd_datacollection_conntimeout = {15, 0};
 
 static void event_cb(struct bufferevent *bev, short events, void *ptr){
 	CgMinerAPIProcessor *apibuf = (CgMinerAPIProcessor *)ptr;
@@ -46,16 +47,18 @@ static void event_cb(struct bufferevent *bev, short events, void *ptr){
 
 	} else {
 		if (events & BEV_EVENT_EOF) {
-//			fprintf(stderr, "amsd: datacollector: %s %p done\n", apibuf->AddrText.c_str(), bev);
-			unsigned char *s = &apibuf->NetIOBuf[0];
+			fprintf(stderr, "amsd: datacollector: %s (%p) connection done (%d), %zu bytes received\n",
+				apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
 			apibuf->NetIOBuf.push_back(0);
 			apibuf->Process();
 		} else if (events & BEV_EVENT_ERROR) {
-
+			fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
+				apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
+		} else if (events & BEV_EVENT_TIMEOUT) {
+			fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
+				apibuf->Remote_AddrText.c_str(), bev, amsd_datacollection_conntimeout.tv_sec,
+				amsd_datacollection_conntimeout.tv_usec, events, apibuf->NetIOBuf.size());
 		}
-
-		fprintf(stderr, "amsd: datacollector: %s (%p) connection %s (%d), %zu bytes received\n", apibuf->Remote_AddrText.c_str(),
-			bev, (events & BEV_EVENT_EOF) ? "done" : "error", events, apibuf->NetIOBuf.size()-1);
 
 		bufferevent_free(bev);
 		delete apibuf;
@@ -145,6 +148,7 @@ static void amsd_datacollector_instance(){
 
 		for (int apicat = 1; apicat <= 4; apicat++) {
 			bebuf = bufferevent_socket_new(eventbase, -1, BEV_OPT_CLOSE_ON_FREE);
+			bufferevent_set_timeouts(bebuf, &amsd_datacollection_conntimeout, &amsd_datacollection_conntimeout);
 
 			if (bufferevent_socket_connect(bebuf, (struct sockaddr *)remote_sockaddr, sockaddr_len) < 0) {
 				bufferevent_free(bebuf);
@@ -181,13 +185,13 @@ static void *amsd_datacollector_thread(void *meow){
 		if (!amsd_datacollection_interval)
 			pthread_exit(NULL);
 
-		lock_datacollector.lock();
+		Lock_DataCollector.lock();
 		fprintf(stderr, "amsd: datacollector: collector instance started\n");
 		gettimeofday(&tv_begin, NULL);
 		amsd_datacollector_instance();
 		gettimeofday(&tv_end, NULL);
 		timersub(&tv_end, &tv_begin, &tv_diff);
-		lock_datacollector.unlock();
+		Lock_DataCollector.unlock();
 		fprintf(stderr, "amsd: datacollector: collector instance done (%zu.%zu secs), sleeping %u secs...\n", tv_diff.tv_sec,
 			tv_diff.tv_usec, amsd_datacollection_interval);
 		sleep(amsd_datacollection_interval);
