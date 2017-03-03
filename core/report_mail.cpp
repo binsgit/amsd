@@ -1,6 +1,20 @@
-//
-// Created by root on 17-2-24.
-//
+/*
+    This file is part of AMSD.
+    Copyright (C) 2016-2017  CloudyReimu <cloudyreimu@gmail.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "../amsd.hpp"
 
@@ -43,7 +57,7 @@ static struct report mailreport_generator(string farm_name){
 
 	timeval tv_begin, tv_end, tv_diff;
 	report ret;
-
+	string hsbuf;
 	char sbuf16[16];
 	double dbuf;
 	int64_t ibuf;
@@ -86,13 +100,11 @@ static struct report mailreport_generator(string farm_name){
 	sqlite3_bind_int64(stmtbuf, 1, last_collect_time);
 	sqlite3_step(stmtbuf);
 	dbuf = sqlite3_column_double(stmtbuf, 0);
-	snprintf(sbuf16, 14, "%.2f", dbuf/1000000000);
-	ret.hashrate += string(sbuf16);
-	ret.hashrate += " PH/s";
-	snprintf(sbuf16, 14, "%.2f", dbuf/1000);
-	ret.mailbody += string(sbuf16);
+	hsbuf = hashrate_h(dbuf);
+	ret.hashrate += hsbuf;
+	ret.mailbody += hsbuf;
 	ret.ctls += to_string(sqlite3_column_int64(stmtbuf, 1));
-	ret.mailbody += " GH/s</th></tr><tr><th>"
+	ret.mailbody += "</th></tr><tr><th>"
 				"控制器数量</th><th>" + ret.ctls
 			+ "</th></tr><tr><th>模组数量</th><th>";
 	sqlite3_finalize(stmtbuf);
@@ -106,7 +118,7 @@ static struct report mailreport_generator(string farm_name){
 	ret.mods += to_string(sqlite3_column_int64(stmtbuf, 0));
 	ret.mailbody += ret.mods + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"
 					   "<table><thead>"
-					   "<tr><th>URL</th><th>用户</th><th>算力（GH/s）</th>"
+					   "<tr><th>URL</th><th>用户</th><th>算力</th>"
 //					   "<th>关联的控制器数量</th><th>关联的模组数量</th>"
 					   "</tr>"
 					   "</thead><tbody>";
@@ -122,8 +134,7 @@ static struct report mailreport_generator(string farm_name){
 		ret.mailbody += "</th><th>";
 		ret.mailbody += (char *)sqlite3_column_text(stmtbuf,1);
 		ret.mailbody += "</th><th>";
-		snprintf(sbuf16, 14, "%.2f", sqlite3_column_double(stmtbuf, 2)/1000);
-		ret.mailbody += sbuf16;
+		ret.mailbody += hashrate_h(diffaccept2ghs(sqlite3_column_double(stmtbuf, 2), ));
 //		ret.mailbody += "</th><th>";
 //
 //		ret.mailbody += "</th><th>";

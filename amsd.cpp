@@ -1,5 +1,5 @@
 /*
-    This file is part of AMS.
+    This file is part of AMSD.
     Copyright (C) 2016-2017  CloudyReimu <cloudyreimu@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
