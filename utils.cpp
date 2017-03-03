@@ -99,27 +99,71 @@ char *strrnchr(char *s, int c, size_t len, size_t n){
 }
 
 
-string hashrate_h(double ghs){
+string hashrate_h(long double mhs){
 	string ret;
 	char sbuf[32];
 
-	if (ghs > 1000000) {
-		snprintf(sbuf, 31, "%.2f", ghs/1000);
-		ret += sbuf;
-		ret += " TH/s";
-	} else if (ghs > 1000000000) {
-		snprintf(sbuf, 31, "%.2f", ghs/1000000);
-		ret += sbuf;
-		ret += " PH/s";
-	} else if (ghs > 1000000000000) {
-		snprintf(sbuf, 31, "%.2f", ghs/1000000000);
+	if (mhs > 1000000000000000) {
+		snprintf(sbuf, 31, "%.2Lf", mhs/1000000000000);
 		ret += sbuf;
 		ret += " EH/s";
+		return ret;
 	}
 
+	if (mhs > 1000000000000) {
+		snprintf(sbuf, 31, "%.2Lf", mhs/1000000000);
+		ret += sbuf;
+		ret += " PH/s";
+		return ret;
+	}
+
+	if (mhs > 1000000000) {
+		snprintf(sbuf, 31, "%.2Lf", mhs/1000000);
+		ret += sbuf;
+		ret += " TH/s";
+		return ret;
+	}
+
+	if (mhs > 1000000) {
+		snprintf(sbuf, 31, "%.2Lf", mhs/1000);
+		ret += sbuf;
+		ret += " GH/s";
+		return ret;
+	}
+
+	snprintf(sbuf, 31, "%.2Lf", mhs);
+	ret += sbuf;
+	ret += " MH/s";
 	return ret;
 }
 
 double diffaccept2ghs(double diffaccept, size_t elapsed){
 	return diffaccept * 4 / elapsed;
+}
+
+string strbinaddr(void *addr, size_t addrlen){
+	char sbuf[INET6_ADDRSTRLEN];
+
+	if (addrlen == 16)
+		inet_ntop(AF_INET6, addr, sbuf, INET6_ADDRSTRLEN);
+	else
+		inet_ntop(AF_INET, addr, sbuf, INET_ADDRSTRLEN);
+
+	return string(sbuf);
+}
+
+string strbinaddr(void *addr, size_t addrlen, uint16_t port){
+	return strbinaddr(addr, addrlen) + ":" + to_string(port);
+}
+
+uint64_t bindna2int(void *dna){
+	uint64_t ret = le64toh(*((uint64_t *)dna));
+	return ret;
+}
+
+string strbindna(void *dna){
+	char sbuf[16] = {0};
+	sprintf(sbuf, "%016" PRIx64, bindna2int(dna));
+	string ret = string(sbuf);
+	return ret;
 }

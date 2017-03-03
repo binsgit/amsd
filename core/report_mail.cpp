@@ -20,8 +20,8 @@
 
 
 struct upload_status {
-    int lines_read;
-    vector<string> smtp_body;
+    size_t readpos = 0;
+    string smtp_body;
 };
 
 struct report {
@@ -34,130 +34,29 @@ struct report {
 static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
 {
 	struct upload_status *upload_ctx = (struct upload_status *)userp;
-	const char *data;
 
 	if ((size == 0) || (nmemb == 0) || ((size*nmemb) < 1)) {
 		return 0;
 	}
 
-	auto it = upload_ctx->smtp_body[upload_ctx->lines_read];
+	size_t totalsize = upload_ctx->smtp_body.size();
+	size_t leftsize = totalsize - upload_ctx->readpos;
+	size_t writesize;
 
-	if (upload_ctx->lines_read >= (upload_ctx->smtp_body.size()-1))
+	if (leftsize == 0)
 		return 0;
 
-	size_t len = it.length();
-	memcpy(ptr, it.c_str(), len);
-	cerr << it;
-	upload_ctx->lines_read++;
-	return len;
+	if (leftsize < size)
+		writesize = leftsize;
+	else
+		writesize = size;
 
-}
+	memcpy(ptr, upload_ctx->smtp_body.c_str()+upload_ctx->readpos, writesize);
 
-static struct report mailreport_generator(string farm_name){
+	upload_ctx->readpos += writesize;
 
-	timeval tv_begin, tv_end, tv_diff;
-	report ret;
-	string hsbuf;
-	char sbuf16[16];
-	double dbuf;
-	int64_t ibuf;
+	return writesize;
 
-	gettimeofday(&tv_begin, NULL);
-
-	ret.mailbody = "<html>"
-			       "<head>"
-			       "<meta charset=\"UTF-8\">"
-			       "<style>"
-			       "th {"
-			       "    border: 1px solid black;"
-			       "    text-align: left;"
-			       "    font-family: Microsoft Yahei;"
-			       "}"
-			       "table {"
-			       "    border-collapse: collapse;"
-			       "    border: 1px solid black;"
-			       "}"
-			       "</style>"
-			       "</head>"
-			       "<body>"
-			       "<h3><b>AMS报告：" + farm_name + "</b></h3>"
-			       "<h4><b>当前概况</b></h4>";
-
-	Lock_DataCollector.lock();
-
-	ret.mailbody += "<table><tbody>"
-				"<tr><th>数据采集时间</th><th>" + rfc3339_strftime(last_collect_time) + "</th></tr>"
-				"<tr><th>总算力</th><th>";
-
-	sqlite3 *thissummarydb, *thismoduledb, *thispooldb;
-
-	sqlite3_stmt *stmtbuf;
-
-	db_open(dbpath_summary, thissummarydb);
-
-
-	sqlite3_prepare_v2(thissummarydb, "SELECT SUM(MHSav), Count(*) FROM summary WHERE Time = ?1", -1, &stmtbuf, NULL);
-	sqlite3_bind_int64(stmtbuf, 1, last_collect_time);
-	sqlite3_step(stmtbuf);
-	dbuf = sqlite3_column_double(stmtbuf, 0);
-	hsbuf = hashrate_h(dbuf);
-	ret.hashrate += hsbuf;
-	ret.mailbody += hsbuf;
-	ret.ctls += to_string(sqlite3_column_int64(stmtbuf, 1));
-	ret.mailbody += "</th></tr><tr><th>"
-				"控制器数量</th><th>" + ret.ctls
-			+ "</th></tr><tr><th>模组数量</th><th>";
-	sqlite3_finalize(stmtbuf);
-
-
-	db_open(dbpath_module_avalon7, thismoduledb);
-
-	sqlite3_prepare_v2(thismoduledb, "SELECT Count(*) FROM module_avalon7 WHERE Time = ?1", -1, &stmtbuf, NULL);
-	sqlite3_bind_int64(stmtbuf, 1, last_collect_time);
-	sqlite3_step(stmtbuf);
-	ret.mods += to_string(sqlite3_column_int64(stmtbuf, 0));
-	ret.mailbody += ret.mods + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"
-					   "<table><thead>"
-					   "<tr><th>URL</th><th>用户</th><th>算力</th>"
-//					   "<th>关联的控制器数量</th><th>关联的模组数量</th>"
-					   "</tr>"
-					   "</thead><tbody>";
-	sqlite3_finalize(stmtbuf);
-
-	db_open(dbpath_pool, thispooldb);
-
-	sqlite3_prepare_v2(thispooldb, "SELECT URL, User, AVG(DifficultyAccepted) FROM pool WHERE LENGTH(URL) > 7 AND Time > ((SELECT Max(Time) FROM pool) - 86400) GROUP BY URL", -1, &stmtbuf, NULL);
-
-	while ( sqlite3_step(stmtbuf) == SQLITE_ROW ) {
-		ret.mailbody += "<tr><th>";
-		ret.mailbody += (char *)sqlite3_column_text(stmtbuf,0);
-		ret.mailbody += "</th><th>";
-		ret.mailbody += (char *)sqlite3_column_text(stmtbuf,1);
-		ret.mailbody += "</th><th>";
-		ret.mailbody += hashrate_h(diffaccept2ghs(sqlite3_column_double(stmtbuf, 2), ));
-//		ret.mailbody += "</th><th>";
-//
-//		ret.mailbody += "</th><th>";
-
-		ret.mailbody += "</th></tr>";
-	}
-
-	db_close(thismoduledb);
-	db_close(thissummarydb);
-	db_close(thispooldb);
-
-	Lock_DataCollector.unlock();
-
-	ret.mailbody += "</tbody></table><br><i>Processed in ";
-
-	gettimeofday(&tv_end, NULL);
-	timersub(&tv_end, &tv_begin, &tv_diff);
-
-	snprintf(sbuf16, 14, "%zu.%zu", tv_diff.tv_sec, tv_diff.tv_usec);
-	ret.mailbody += sbuf16;
-	ret.mailbody += " seconds.</i></body></html>";
-
-	return ret;
 }
 
 static int mailreporter_instance(){
@@ -168,13 +67,11 @@ static int mailreporter_instance(){
 	time_t timenow = time(NULL);
 	char datebuf[48];
 	tm localtime_meow;
-	vector<string> smtp_body;
+	string smtp_body;
 	string smtp_server = "smtps://" + Config["MailReport"]["SMTP_Server"] + ":" + Config["MailReport"]["SMTP_Port"];
 	string mail_from = Config["MailReport"]["Mail_From"];
 	string mail_tos = Config["MailReport"]["Mail_To"];
 	string farm_name = Config["Farm"]["Name"];
-
-	upload_ctx.lines_read = 0;
 
 
 	curl = curl_easy_init();
@@ -203,17 +100,19 @@ static int mailreporter_instance(){
 		localtime_r(&timenow, &localtime_meow);
 		strftime(datebuf, 46, "%a, %d %b %Y %X", &localtime_meow);
 
-		report thisrpt = mailreport_generator(farm_name);
+		Report::Report thisreport(farm_name);
 
-		smtp_body.push_back("Date: " + string(datebuf) + " +0800\r\n");
-		smtp_body.push_back("To: " + mail_tos + "\r\n");
-		smtp_body.push_back("From: " + rfc1342_encode_utf8("AMS Reporter - " + farm_name) + " <"+mail_from+">\r\n");
-		smtp_body.push_back("Content-Type: text/html; charset=utf-8\r\n");
-		smtp_body.push_back("Subject: " + rfc1342_encode_utf8("AMS报告：" + farm_name) + " [" + thisrpt.hashrate +
-				    "][" + thisrpt.ctls + " Ctls][" + thisrpt.mods + " Mods]\r\n");
-		smtp_body.push_back("\r\n");
-		smtp_body.push_back(thisrpt.mailbody + "\r\n");
-		smtp_body.push_back("\r\n");
+		smtp_body= "Date: " + string(datebuf) + " +0800\r\n" +
+		"To: " + mail_tos + "\r\n" +
+		"From: " + rfc1342_encode_utf8("AMS Reporter - " + farm_name) + " <"+mail_from+">\r\n" +
+		"Content-Type: text/html; charset=utf-8\r\n" +
+		"Subject: " + rfc1342_encode_utf8("AMS报告：" + farm_name) + " [" +
+				    hashrate_h(thisreport.Farm0.MHS) +
+				    "][" + to_string(thisreport.Farm0.Controllers.size()) +
+				    " Ctls][" + to_string(thisreport.Farm0.Modules) + " Mods]" + "\r\n" +
+		"\r\n" +
+		thisreport.HTMLReport() + "\r\n" +
+		"\r\n";
 
 		upload_ctx.smtp_body = smtp_body;
 

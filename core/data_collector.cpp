@@ -23,14 +23,23 @@ static const string api_cmd_estats = "{\"command\":\"estats\"}";
 static const string api_cmd_edevs = "{\"command\":\"edevs\"}";
 static const string api_cmd_pools = "{\"command\":\"pools\"}";
 
+#define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
+#define bd(n,d)		sqlite3_bind_double(stmt, n, d)
+#define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
+#define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
+
+
 time_t last_collect_time = 0;
 
 shared_timed_mutex Lock_DataCollector;
 
 map<ReimuInetAddr, Avalon_Controller> Controllers;
 
-uint amsd_datacollection_interval = 120;
+size_t amsd_datacollection_interval = 120;
 struct timeval amsd_datacollection_conntimeout = {15, 0};
+
+sqlite3_stmt *stmt_log_timeout;
+
 
 static void event_cb(struct bufferevent *bev, short events, void *ptr){
 	CgMinerAPIProcessor *apibuf = (CgMinerAPIProcessor *)ptr;
@@ -65,13 +74,24 @@ static void event_cb(struct bufferevent *bev, short events, void *ptr){
 				apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
 			apibuf->NetIOBuf.push_back(0);
 			apibuf->Process();
-		} else if (events & BEV_EVENT_ERROR) {
-			fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
-				apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
-		} else if (events & BEV_EVENT_TIMEOUT) {
-			fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
-				apibuf->Remote_AddrText.c_str(), bev, amsd_datacollection_conntimeout.tv_sec,
-				amsd_datacollection_conntimeout.tv_usec, events, apibuf->NetIOBuf.size());
+		} else {
+			sqlite3_bind_int64(stmt_log_timeout, 1, apibuf->StartTime);
+			sqlite3_bind_blob64(stmt_log_timeout, 2, apibuf->Remote_Addr, apibuf->Remote_AddrLen, SQLITE_STATIC);
+			sqlite3_bind_int(stmt_log_timeout, 3, apibuf->Remote_Port);
+
+			if (events & BEV_EVENT_ERROR) {
+				sqlite3_bind_int(stmt_log_timeout, 4, Issue::Issue::IssueType::ConnectionFailure);
+				fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
+					apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
+			} else if (events & BEV_EVENT_TIMEOUT) {
+				sqlite3_bind_int(stmt_log_timeout, 4, Issue::Issue::IssueType::ConnectionTimeout);
+				fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
+					apibuf->Remote_AddrText.c_str(), bev, amsd_datacollection_conntimeout.tv_sec,
+					amsd_datacollection_conntimeout.tv_usec, events, apibuf->NetIOBuf.size());
+			}
+
+			sqlite3_step(stmt_log_timeout);
+			sqlite3_reset(stmt_log_timeout);
 		}
 
 		bufferevent_free(bev);
@@ -120,7 +140,19 @@ static void amsd_datacollector_instance(){
 	int inaddr_len, sockaddr_len;
 	char addrsbuf[INET6_ADDRSTRLEN];
 	int rc;
-	sqlite3 *db_handles[4] = {0};
+	sqlite3 *db_handles[5] = {0};
+
+	string stmout = Config["DataCollector"]["ConnTimeout"];
+
+	amsd_datacollection_conntimeout.tv_usec = 0;
+	amsd_datacollection_conntimeout.tv_sec = (size_t)strtol(stmout.c_str(), NULL, 10);
+
+	if (!amsd_datacollection_conntimeout.tv_sec) {
+		fprintf(stderr, "amsd: datacollector: WARNING: Bad `ConnTimeout' in config file! Please fix!\n");
+		fprintf(stderr, "amsd: datacollector: WARNING: Using 30 seconds as ConnTimeout!\n");
+		amsd_datacollection_conntimeout.tv_sec = 30;
+	}
+
 
 	last_collect_time = time(NULL);
 
@@ -128,12 +160,18 @@ static void amsd_datacollector_instance(){
 	db_open(dbpath_module_avalon7, db_handles[1]);
 	db_open(dbpath_device, db_handles[2]);
 	db_open(dbpath_pool, db_handles[3]);
+	db_open(dbpath_issue, db_handles[4]);
+
 
 	for (size_t j = 0; j < sizeof(db_handles)/sizeof(sqlite3 *); j++) {
 		if (db_handles[j]) {
 			sqlite3_exec(db_handles[j], "BEGIN", NULL, NULL, NULL);
 		}
 	}
+
+	sqlite3_prepare_v2(db_handles[4], "INSERT INTO issue (Time, Addr, Port, Type) VALUES (?1, ?2, ?3, ?4)",
+			   -1, &stmt_log_timeout, NULL);
+
 
 	db_open(dbpath_controller, thisdb);
 
@@ -183,6 +221,8 @@ static void amsd_datacollector_instance(){
 	event_base_dispatch(eventbase);
 	event_base_free(eventbase);
 
+	sqlite3_finalize(stmt_log_timeout);
+
 	for (size_t j = 0; j < sizeof(db_handles)/sizeof(sqlite3 *); j++) {
 		if (db_handles[j]) {
 			sqlite3_exec(db_handles[j], "COMMIT", NULL, NULL, NULL);
@@ -195,9 +235,16 @@ static void amsd_datacollector_instance(){
 static void *amsd_datacollector_thread(void *meow){
 	timeval tv_begin, tv_end, tv_diff;
 
+	string sintvl = Config["DataCollector"]["CollectInterval"];
+
 	while (1) {
-		if (!amsd_datacollection_interval)
-			pthread_exit(NULL);
+		amsd_datacollection_interval = (size_t)strtol(sintvl.c_str(), NULL, 10);
+
+		if (!amsd_datacollection_interval) {
+			fprintf(stderr, "amsd: datacollector: WARNING: Bad `CollectInterval' in config file! Please fix!\n");
+			fprintf(stderr, "amsd: datacollector: WARNING: Using 15 minutes as CollectInterval!\n");
+			amsd_datacollection_interval = 60 * 15;
+		}
 
 		Lock_DataCollector.lock();
 		fprintf(stderr, "amsd: datacollector: collector instance started\n");
@@ -206,9 +253,9 @@ static void *amsd_datacollector_thread(void *meow){
 		gettimeofday(&tv_end, NULL);
 		timersub(&tv_end, &tv_begin, &tv_diff);
 		Lock_DataCollector.unlock();
-		fprintf(stderr, "amsd: datacollector: collector instance done (%zu.%zu secs), sleeping %u secs...\n", tv_diff.tv_sec,
+		fprintf(stderr, "amsd: datacollector: collector instance done (%zu.%zu secs), sleeping %zu secs...\n", tv_diff.tv_sec,
 			tv_diff.tv_usec, amsd_datacollection_interval);
-		sleep(amsd_datacollection_interval);
+		sleep((uint)amsd_datacollection_interval);
 	}
 }
 
@@ -243,11 +290,6 @@ static const CgMinerAPIQueryAutomator aq_device("device", {"ASC", "Name", "ID", 
 							   "Device Hardware%", "Device Rejected%", "Device Elapsed"});
 
 
-
-#define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
-#define bd(n,d)		sqlite3_bind_double(stmt, n, d)
-#define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
-#define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
 CgMinerAPIQueryAutomator::CgMinerAPIQueryAutomator(string table_name, vector<string> json_keys) {
 	TableName = table_name;
@@ -515,6 +557,19 @@ void CgMinerAPIProcessor::ProcessHolyShittyCrap() { // Special function designed
 			bd(58, mmmm.Freq);
 			bi(59, mmmm.PG);
 			bi(60, mmmm.Led);
+
+			di = 134;
+			for (li=0; li<4; li++)
+				bi(di+li, mmmm.ECHU[li]);
+
+			bi(133, mmmm.TA);
+
+			bi(138, mmmm.ECMM);
+
+			bi(669, mmmm.FM);
+			di = 670;
+			for (li=0; li<4; li++)
+				bi(di+li, mmmm.CRC[li]);
 
 //			for (li=0; li<3; li++)
 //				for (li2=0; li2<6; li2++)

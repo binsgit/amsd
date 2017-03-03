@@ -26,10 +26,13 @@ const char *dbpath_summary = NULL;
 const char *dbpath_pool = NULL;
 const char *dbpath_device = NULL;
 const char *dbpath_module_avalon7 = NULL;
+const char *dbpath_issue = NULL;
 
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
+	{"issue", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
+		"Issue BLOB)")},
 	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB, CriticalValue_Hashrate UNSIGNED INT32)")},
 	{"summary", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, "
 		"Elapsed INT, MHSav REAL, MHS5s REAL, MHS1m REAL, MHS5m REAL, MHS15m REAL, "
@@ -219,6 +222,7 @@ int amsd_db_init(){
 	dbpath_module_avalon7 = db["module_avalon7"].first.c_str();
 	dbpath_pool = db["pool"].first.c_str();
 	dbpath_device = db["device"].first.c_str();
+	dbpath_issue = db["issue"].first.c_str();
 
 	return 0;
 

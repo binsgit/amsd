@@ -58,6 +58,8 @@
 
 
 #include "core/data_collector.hpp"
+#include "core/report.hpp"
+#include "core/issue.hpp"
 
 #include "lib/rfc1342.hpp"
 #include "lib/rfc3339.hpp"
@@ -121,6 +123,7 @@ extern const char *dbpath_summary;
 extern const char *dbpath_pool;
 extern const char *dbpath_device;
 extern const char *dbpath_module_avalon7;
+extern const char *dbpath_issue;
 
 // Server
 extern int amsd_server();
@@ -139,12 +142,17 @@ extern int amsd_db_init();
 // Utils
 extern char *strrnchr(char *s, int c, size_t len, size_t n);
 extern char *strrnchr(char *s, int c, size_t n);
-extern string hashrate_h(double ghs);
+extern string hashrate_h(long double mhs);
 extern double diffaccept2ghs(double diffaccept, size_t elapsed);
 extern string amsd_random_string();
 extern string amsd_strerror(GeneralStatus status);
 extern string amsd_strerror(GeneralStatus status, int _errnooo);
 extern string amsd_strerror(GeneralStatus status, string xmsg);
+extern string strbinaddr(void *addr, size_t addrlen);
+extern string strbinaddr(void *addr, size_t addrlen, uint16_t port);
+extern uint64_t bindna2int(void *dna);
+extern string strbindna(void *dna);
+
 
 // Request
 extern int amsd_request_parse(char *inputstr, string &outputstr);
@@ -160,6 +168,8 @@ extern int amsd_operation_controller(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_issues(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_mailreport(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_config(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_status(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_farmap(json_t *in_data, json_t *&out_data);
 
 class MMUpgrade {
 private:

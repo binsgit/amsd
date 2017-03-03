@@ -29,7 +29,7 @@ void amsd_init_config(){
 	Config["Farm"]["Name"] = "Miku's Farm";
 	Config["Farm"]["Description"] = "喵喵喵喵喵";
 
-	Config["DataCollector"]["ConnTimeout"] = "15";
+	Config["DataCollector"]["ConnTimeout"] = "30";
 	Config["DataCollector"]["CollectInterval"] = "600";
 
 	/*
