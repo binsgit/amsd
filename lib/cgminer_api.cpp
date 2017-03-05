@@ -26,7 +26,7 @@ int cgminer_api_request_raw(string ip, uint16_t port, string in_data, string &ou
 	uint8_t remote_addr[sizeof(struct sockaddr_in6)];
 
 	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		return -1;
+		return -2;
 
 	// TODO: IPv6
 	if (IPv6) {

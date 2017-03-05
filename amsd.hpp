@@ -26,6 +26,7 @@
 #include <shared_mutex>
 #include <sstream>
 #include <map>
+#include <set>
 #include <unordered_map>
 
 #include <cstdio>
@@ -161,6 +162,8 @@ extern int amsd_request_parse(char *inputstr, string &outputstr);
 extern void *amsd_operation_get(string name);
 extern bool amsd_operation_register(string name, int (*pfunc)(json_t*, json_t*&));
 
+extern int amsd_operation_glimpse(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_history(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_fwver(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_mmupgrade(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_supertac(json_t *in_data, json_t *&out_data);
@@ -170,6 +173,9 @@ extern int amsd_operation_mailreport(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_config(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_status(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_farmap(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_ascset(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_rawapi(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_user(json_t *in_data, json_t *&out_data);
 
 class MMUpgrade {
 private:

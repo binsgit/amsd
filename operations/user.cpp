@@ -16,53 +16,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMSD_REPORT_HPP
-#define AMSD_REPORT_HPP
-
 #include "../amsd.hpp"
 
-namespace Report {
 
-    class Pool {
-    public:
-	string URL;
-	string User;
-	double GHS = 0;
-    };
+int amsd_operation_user(json_t *in_data, json_t *&out_data){
+	json_t *j_op = json_object_get(in_data, "op");
 
-    class Controller {
-    public:
-	size_t Elapsed = 0;
-	vector<uint8_t> Addr;
-	uint16_t Port = 0;
-    };
+	if (!json_is_string(j_op))
+		return -1;
 
-    class Farm {
-    public:
-	size_t Modules = 0;
-	long double MHS = 0;
+	string op(json_string_value(j_op));
 
-	vector<Controller> Controllers;
-	map<pair<string, string>, Pool> Pools;
-    };
+	if (op == "add") {
 
-    class Report {
-    private:
-	void CollectData();
-	bool CollectPool;
-    public:
-	string Name;
-	Farm Farm0;
-	timeval ProcessTime;
+	} else if (op == "upd") {
 
-	Report(string farm_name, bool collect_pool=1);
+	} else if (op == "login") {
 
-	string HTMLReport();
+	}
 
-    };
+
 
 }
-
-#endif //AMSD_REPORT_HPP
-
-

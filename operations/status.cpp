@@ -32,7 +32,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 	int addrlen = 4;
 	int devid, modid;
 	uint64_t *dna;
-	char sbuf[16];
+	char sbuf[32];
 	map<int, vector<int>> modcounter;
 
 
@@ -148,7 +148,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 		json_object_set_new(j_module, "Ver", json_string((const char *)sqlite3_column_text(stmt[3], 4)));
 
 		dna = (uint64_t *)sqlite3_column_blob(stmt[3], 5);
-		snprintf(sbuf, 15, "%" PRIu64, *dna);
+		snprintf(sbuf, 31, "%016" PRIx64, *dna);
 		json_object_set_new(j_module, "DNA", json_string(sbuf));
 		json_object_set_new(j_module, "LW", json_integer(sqlite3_column_int64(stmt[3], 6)));
 		json_object_set_new(j_module, "DH", json_real(sqlite3_column_double(stmt[3], 7)));

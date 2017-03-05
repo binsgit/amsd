@@ -61,9 +61,10 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 		port = (uint16_t)sqlite3_column_int(stmt, 1);
 
 		inet_ntop(addrlen == 4 ? AF_INET : AF_INET6, addr, addrsbuf, addrlen == 4 ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN);
-		snprintf(addrsbuf+strlen(addrsbuf), 6, ":%" PRIu16, port);
+//		snprintf(addrsbuf+strlen(addrsbuf), 6, ":%" PRIu16, port);
 
-		json_object_set_new(j_issue, "addr", json_string(addrsbuf));
+		json_object_set_new(j_issue, "ip", json_string(addrsbuf));
+		json_object_set_new(j_issue, "port", json_integer(port));
 		json_object_set_new(j_issue, "auc_id", json_integer(sqlite3_column_int(stmt, 2)));
 		json_object_set_new(j_issue, "mod_id", json_integer(sqlite3_column_int(stmt, 3)));
 

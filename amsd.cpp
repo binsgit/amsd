@@ -48,15 +48,20 @@ int main() {
 	if (rc_dbinit)
 		return 2;
 
+
+	amsd_operation_register("glimpse", &amsd_operation_glimpse);
 	amsd_operation_register("farmap", &amsd_operation_farmap);
+	amsd_operation_register("history", &amsd_operation_history);
 	amsd_operation_register("status", &amsd_operation_status);
 	amsd_operation_register("issues", &amsd_operation_issues);
 	amsd_operation_register("fwver", &amsd_operation_fwver);
+	amsd_operation_register("ascset", &amsd_operation_ascset);
 	amsd_operation_register("mmupgrade", &amsd_operation_mmupgrade);
 	amsd_operation_register("supertac", &amsd_operation_supertac);
 	amsd_operation_register("controller", &amsd_operation_controller);
 	amsd_operation_register("mailreport", &amsd_operation_mailreport);
 	amsd_operation_register("config", &amsd_operation_config);
+	amsd_operation_register("rawapi", &amsd_operation_rawapi);
 
 
 

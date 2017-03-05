@@ -16,53 +16,5 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMSD_REPORT_HPP
-#define AMSD_REPORT_HPP
-
-#include "../amsd.hpp"
-
-namespace Report {
-
-    class Pool {
-    public:
-	string URL;
-	string User;
-	double GHS = 0;
-    };
-
-    class Controller {
-    public:
-	size_t Elapsed = 0;
-	vector<uint8_t> Addr;
-	uint16_t Port = 0;
-    };
-
-    class Farm {
-    public:
-	size_t Modules = 0;
-	long double MHS = 0;
-
-	vector<Controller> Controllers;
-	map<pair<string, string>, Pool> Pools;
-    };
-
-    class Report {
-    private:
-	void CollectData();
-	bool CollectPool;
-    public:
-	string Name;
-	Farm Farm0;
-	timeval ProcessTime;
-
-	Report(string farm_name, bool collect_pool=1);
-
-	string HTMLReport();
-
-    };
-
-}
-
-#endif //AMSD_REPORT_HPP
-
+#include "amsd.hpp"
 

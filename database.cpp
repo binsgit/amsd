@@ -31,6 +31,9 @@ const char *dbpath_issue = NULL;
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
+	{"user", spair("", "(UID INT PRIMARY KEY, UserType INT, UserName TEXT, NickName TEXT, Password BLOB(64), " // SHA512
+		"Token TEXT, CTime INT, MTime INT, ATime INT, Avatar BLOB, ExtData BLOB, "
+		"UNIQUE(UserName) ON CONFLICT ABORT)")},
 	{"issue", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"Issue BLOB)")},
 	{"mod_policy", spair("", "(Time UNSIGNED INT64, DNA BLOB, CriticalValue_Hashrate UNSIGNED INT32)")},

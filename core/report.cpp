@@ -19,8 +19,9 @@
 #include "report.hpp"
 
 
-Report::Report::Report(string farm_name) {
+Report::Report::Report(string farm_name, bool collect_pool) {
 	Name = farm_name;
+	CollectPool = collect_pool;
 	timeval tv_begin, tv_end;
 	gettimeofday(&tv_begin, NULL);
 	CollectData();
@@ -45,7 +46,7 @@ void Report::Report::CollectData() {
 
 	db_open(dbpath_summary, thissummarydb);
 	db_open(dbpath_module_avalon7, thismoduledb);
-	db_open(dbpath_pool, thispooldb);
+
 
 
 	sqlite3_prepare_v2(thissummarydb, "SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port", -1, &stmtbuf0, NULL);
@@ -68,35 +69,41 @@ void Report::Report::CollectData() {
 	sqlite3_finalize(stmtbuf0);
 
 
-	sqlite3_prepare_v2(thispooldb, "SELECT URL, User, DifficultyAccepted FROM pool WHERE "
-		"LENGTH(URL) > 7 AND "
-		"Time > ((SELECT Max(Time) FROM pool) - 86400) AND "
-		"Addr = ?1 AND "
-		"Port = ?2 "
-		"GROUP BY URL", -1, &stmtbuf1, NULL);
+	if (CollectPool) {
+		db_open(dbpath_pool, thispooldb);
+		sqlite3_prepare_v2(thispooldb, "SELECT URL, User, DifficultyAccepted FROM pool WHERE "
+			"LENGTH(URL) > 7 AND "
+			"Time > ((SELECT Max(Time) FROM pool) - 86400) AND "
+			"Addr = ?1 AND "
+			"Port = ?2 "
+			"GROUP BY URL", -1, &stmtbuf1, NULL);
 
-	for (auto const &ctl: Farm0.Controllers) {
+		for (auto const &ctl: Farm0.Controllers) {
 
-		sqlite3_bind_blob64(stmtbuf1, 1, &ctl.Addr[0], ctl.Addr.size(), SQLITE_STATIC);
-		sqlite3_bind_int(stmtbuf1, 2, ctl.Port);
+			sqlite3_bind_blob64(stmtbuf1, 1, &ctl.Addr[0], ctl.Addr.size(), SQLITE_STATIC);
+			sqlite3_bind_int(stmtbuf1, 2, ctl.Port);
 
-		while (sqlite3_step(stmtbuf1) == SQLITE_ROW){
-			sbuf0 = string((char *)sqlite3_column_text(stmtbuf1, 0));
-			sbuf1 = string((char *)sqlite3_column_text(stmtbuf1, 1));
-			lubuf0 = (size_t)sqlite3_column_int64(stmtbuf1,2);
 
-			poolbuf = &Farm0.Pools[pair<string, string>(sbuf0, sbuf1)];
+			while (sqlite3_step(stmtbuf1) == SQLITE_ROW) {
+				sbuf0 = string((char *) sqlite3_column_text(stmtbuf1, 0));
+				sbuf1 = string((char *) sqlite3_column_text(stmtbuf1, 1));
+				lubuf0 = (size_t) sqlite3_column_int64(stmtbuf1, 2);
 
-			poolbuf->URL = sbuf0;
-			poolbuf->User = sbuf1;
-			poolbuf->GHS = diffaccept2ghs(lubuf0, ctl.Elapsed);
+				poolbuf = &Farm0.Pools[pair<string, string>(sbuf0, sbuf1)];
+
+				poolbuf->URL = sbuf0;
+				poolbuf->User = sbuf1;
+				poolbuf->GHS = diffaccept2ghs(lubuf0, ctl.Elapsed);
+			}
+
+			sqlite3_reset(stmtbuf1);
+
 		}
 
-		sqlite3_reset(stmtbuf1);
+		sqlite3_finalize(stmtbuf1);
 
+		db_close(thispooldb);
 	}
-
-	sqlite3_finalize(stmtbuf1);
 
 	sqlite3_prepare_v2(thismoduledb, "SELECT Count(*) FROM module_avalon7 WHERE Time = ?1", -1, &stmtbuf2, NULL);
 	sqlite3_bind_int64(stmtbuf2, 1, last_collect_time);
@@ -108,7 +115,7 @@ void Report::Report::CollectData() {
 
 	db_close(thissummarydb);
 	db_close(thismoduledb);
-	db_close(thispooldb);
+
 
 	Lock_DataCollector.unlock();
 }

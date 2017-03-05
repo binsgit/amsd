@@ -16,53 +16,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMSD_REPORT_HPP
-#define AMSD_REPORT_HPP
-
 #include "../amsd.hpp"
 
-namespace Report {
+int amsd_operation_rawapi(json_t *in_data, json_t *&out_data){
+	json_t *j_ip, *j_port, *j_req;
 
-    class Pool {
-    public:
-	string URL;
-	string User;
-	double GHS = 0;
-    };
 
-    class Controller {
-    public:
-	size_t Elapsed = 0;
-	vector<uint8_t> Addr;
-	uint16_t Port = 0;
-    };
+	j_ip = json_object_get(in_data, "ip");
+	j_port = json_object_get(in_data, "port");
+	j_req = json_object_get(in_data, "req");
 
-    class Farm {
-    public:
-	size_t Modules = 0;
-	long double MHS = 0;
+	if (!json_is_string(j_ip) || !json_is_integer(j_port) || !json_is_string(j_req))
+		return -1;
 
-	vector<Controller> Controllers;
-	map<pair<string, string>, Pool> Pools;
-    };
+	string reqret;
 
-    class Report {
-    private:
-	void CollectData();
-	bool CollectPool;
-    public:
-	string Name;
-	Farm Farm0;
-	timeval ProcessTime;
+	int ret = cgminer_api_request_raw(string(json_string_value(j_ip)), (uint16_t)json_integer_value(j_port),
+	string(json_string_value(j_req)), reqret);
 
-	Report(string farm_name, bool collect_pool=1);
+	json_object_set_new(out_data, "ret", json_string(reqret.c_str()));
 
-	string HTMLReport();
-
-    };
-
+	return ret;
 }
-
-#endif //AMSD_REPORT_HPP
-
-
