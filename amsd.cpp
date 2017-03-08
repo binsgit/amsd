@@ -20,6 +20,9 @@
 
 pthread_attr_t _pthread_detached;
 
+uint8_t *amsd_shm = NULL;
+
+
 int main() {
 
 	fprintf(stderr, "Avalon Management System Daemon v0.1 - Get things done rapidly!\n");
@@ -48,6 +51,33 @@ int main() {
 	if (rc_dbinit)
 		return 2;
 
+	string shm_path = path_runtime + "shm";
+
+	int shm_fd = open(shm_path.c_str(), O_RDWR|O_CREAT|O_TRUNC);
+
+	if (shm_fd < 1) {
+		fprintf(stderr,"amsd: failed to open shared memory file: %s\n", strerror(errno));
+		return 2;
+	}
+
+	if (posix_fallocate(shm_fd, 0, 8192)) {
+		fprintf(stderr,"amsd: failed to allocate shared memory file: %s\n", strerror(errno));
+		return 2;
+	}
+
+	amsd_shm = (uint8_t *)mmap(0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	if (!amsd_shm) {
+		fprintf(stderr,"amsd: failed to map shared memory file: %s\n", strerror(errno));
+		return 2;
+	}
+
+	fprintf(stderr,"amsd: 8KB shared memory at %p\n", (void *)amsd_shm);
+
+	snprintf((char *)amsd_shm, 256, "{\"user\":\"%s\", \"passwd\":\"%s\"}", amsd_local_superuser_name.c_str(),
+	amsd_local_superuser_passwd.c_str());
+
+//	msync()
 
 	amsd_operation_register("glimpse", &amsd_operation_glimpse);
 	amsd_operation_register("farmap", &amsd_operation_farmap);

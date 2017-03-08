@@ -18,3 +18,9 @@
 
 #include "amsd.hpp"
 
+string amsd_local_superuser_name = amsd_random_string();
+string amsd_local_superuser_passwd = amsd_random_string();
+
+int amsd_user_auth(string user, string passwd){
+
+}

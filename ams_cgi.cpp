@@ -33,9 +33,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#include <cgicc/Cgicc.h>
-
-
 using namespace std;
 
 char *socket_path = (char *)"/tmp/.amsd_socket";

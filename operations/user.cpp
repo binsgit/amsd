@@ -27,6 +27,8 @@ int amsd_operation_user(json_t *in_data, json_t *&out_data){
 
 	string op(json_string_value(j_op));
 
+
+
 	if (op == "add") {
 
 	} else if (op == "upd") {

@@ -44,6 +44,7 @@
 #include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/mman.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -125,6 +126,9 @@ extern const char *dbpath_pool;
 extern const char *dbpath_device;
 extern const char *dbpath_module_avalon7;
 extern const char *dbpath_issue;
+
+extern string amsd_local_superuser_name;
+extern string amsd_local_superuser_passwd;
 
 // Server
 extern int amsd_server();
