@@ -23,6 +23,7 @@ int amsd_request_parse(char *inputstr, string &outputstr){
 	json_error_t err;
 	json_t *i_json_root = json_loads((const char *)inputstr, 0, &err);
 	json_t *j_operation, *j_data, *o_json_root, *o_json_opdata, *o_json_rc;
+	json_t *j_auth;
 	string operation;
 	int (*op)(json_t *in_data, json_t *&out_data);
 	char *serialized_out;
@@ -72,6 +73,20 @@ int amsd_request_parse(char *inputstr, string &outputstr){
 		goto parseerr;
 	}
 
+	j_auth = json_object_get(i_json_root, "auth");
+
+	if (!json_is_string(j_auth)) {
+		if (!isOperationNoAuthPermitted((void *)op)) {
+			fprintf(stderr, "amsd: request %p: error: operation `%s' requires authentication\n", (void *)inputstr, operation.c_str());
+			goto autherr;
+		}
+	} else {
+		if (amsd_user_auth(string(json_string_value(j_auth)), NULL)) {
+			fprintf(stderr, "amsd: request %p: error: operation `%s' authentication failed\n", (void *)inputstr, operation.c_str());
+			goto autherr;
+		}
+	}
+
 	fprintf(stderr, "amsd: request %p: executing operation `%s' at %p\n", (void *)inputstr, operation.c_str(),
 		(void *)op);
 
@@ -93,6 +108,10 @@ int amsd_request_parse(char *inputstr, string &outputstr){
 
 	return 0;
 
+	autherr:
+	json_decref(i_json_root);
+	outputstr = "{\"rc\": 65533}";
+	return -1;
 
 	parseerr:
 	json_decref(i_json_root);

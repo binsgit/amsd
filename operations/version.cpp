@@ -18,15 +18,13 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_glimpse(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
 
-	Report::Report rpt("", 0);
+int amsd_operation_version(json_t *in_data, json_t *&out_data){
+	json_t *j_version = json_object();
+	json_t *j_amsd_version = json_real(AMSD_VERSION);
 
-	json_object_set_new(out_data, "mods", json_integer((long)rpt.Farm0.Modules));
-	json_object_set_new(out_data, "ctls", json_integer((long)rpt.Farm0.Controllers.size()));
-	json_object_set_new(out_data, "mhs", json_real((double)rpt.Farm0.MHS));
-	json_object_set_new(out_data, "mhs_t", json_integer((long)rpt.Farm0.Modules*1000*7300));
+	json_object_set_new(j_version, "amsd", j_amsd_version);
+	json_object_set_new(out_data, "version", j_version);
 
 	return 0;
 }

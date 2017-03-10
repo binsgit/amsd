@@ -20,6 +20,8 @@
 
 
 int amsd_operation_status(json_t *in_data, json_t *&out_data){
+	NoLoginReq_Flag;
+
 	json_t *j_status = json_object();
 	json_t *j_ip, *j_port;
 	json_t *j_summary, *j_pool, *j_device, *j_module;

@@ -20,16 +20,47 @@
 
 
 int amsd_operation_user(json_t *in_data, json_t *&out_data){
+
 	json_t *j_op = json_object_get(in_data, "op");
+	json_t *j_username, *j_passwd;
+	json_t *j_token;
+	sqlite3 *thisdb;
+	sqlite3_stmt *stmt;
+	uint8_t hsbuf[64];
+
+	int login_status;
+
+	string user, passwd, token;
 
 	if (!json_is_string(j_op))
 		return -1;
 
 	string op(json_string_value(j_op));
 
-
+	db_open(dbpath_user, thisdb);
 
 	if (op == "add") {
+		j_username = json_object_get(in_data, "username");
+		j_passwd = json_object_get(in_data, "passwd");
+
+		if (!json_is_string(j_username) || !json_is_string(j_passwd))
+			return -1;
+
+		passwd += json_string_value(j_passwd);
+
+		sqlite3_prepare(thisdb, "INSERT INTO user (UserType, UserName, Password) VALUES "
+			"(?1, ?2, ?3)", -1, &stmt, NULL);
+
+		sqlite3_bind_int(stmt, 1, 1);
+		sqlite3_bind_text(stmt, 2, json_string_value(j_username), -1, SQLITE_STATIC);
+
+		SHA512((const u_char *)passwd.c_str(), passwd.length(), hsbuf);
+
+		sqlite3_bind_blob(stmt, 3, hsbuf, 64, SQLITE_STATIC);
+
+		sqlite3_step(stmt);
+
+		sqlite3_finalize(stmt);
 
 	} else if (op == "upd") {
 
@@ -37,6 +68,8 @@ int amsd_operation_user(json_t *in_data, json_t *&out_data){
 
 	}
 
+	db_close(thisdb);
 
 
+	return 0;
 }

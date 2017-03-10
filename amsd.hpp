@@ -54,6 +54,7 @@
 #include <sqlite3.h>
 #include <b64/encode.h>
 #include <curl/curl.h>
+#include <openssl/sha.h>
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
@@ -69,10 +70,16 @@
 #include "lib/api_parser.hpp"
 #include "lib/avalon_errno.hpp"
 
+#define AMSD_VERSION		1.00
+
+
 using namespace std;
 
 #define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
 #define db_close(s)	sqlite3_close(s)
+
+#define NoLoginReq_Flag		asm volatile("nop; nop; nop; nop")
+
 
 struct amsd_si_ctx {
     int fd;
@@ -105,7 +112,7 @@ enum GeneralStatus {
     Finished = 0x101
 };
 
-
+class User;
 class MMUpgrade;
 class SSHConnection;
 class SuperRTACSession;
@@ -126,9 +133,9 @@ extern const char *dbpath_pool;
 extern const char *dbpath_device;
 extern const char *dbpath_module_avalon7;
 extern const char *dbpath_issue;
+extern const char *dbpath_user;
 
-extern string amsd_local_superuser_name;
-extern string amsd_local_superuser_passwd;
+extern string amsd_local_superuser_token;
 
 // Server
 extern int amsd_server();
@@ -157,7 +164,11 @@ extern string strbinaddr(void *addr, size_t addrlen);
 extern string strbinaddr(void *addr, size_t addrlen, uint16_t port);
 extern uint64_t bindna2int(void *dna);
 extern string strbindna(void *dna);
+extern bool isOperationNoAuthPermitted(void *func);
 
+// User
+extern int amsd_user_login(string user, string passwd, string &token);
+extern int amsd_user_auth(string token, User *userinfo);
 
 // Request
 extern int amsd_request_parse(char *inputstr, string &outputstr);
@@ -180,6 +191,14 @@ extern int amsd_operation_farmap(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_ascset(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_rawapi(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_user(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_login(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_version(json_t *in_data, json_t *&out_data);
+
+class User {
+    string UserName;
+    string NickName;
+};
+
 
 class MMUpgrade {
 private:

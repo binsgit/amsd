@@ -19,7 +19,7 @@
 #include "../amsd.hpp"
 
 int amsd_operation_history(json_t *in_data, json_t *&out_data){
-
+	NoLoginReq_Flag;
 	json_t *j_type = json_object_get(in_data, "type");
 	json_t *j_timearray, *j_valuearray, *j_value2array;
 	json_t *j_objtmp;
