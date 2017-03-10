@@ -74,13 +74,13 @@ int main() {
 
 	fprintf(stderr,"amsd: 8KB shared memory at %p\n", (void *)amsd_shm);
 
-	snprintf((char *)amsd_shm, 256, "{\"user\":\"%s\", \"passwd\":\"%s\"}", amsd_local_superuser_name.c_str(),
-	amsd_local_superuser_passwd.c_str());
+	snprintf((char *)amsd_shm, 256, "%s", amsd_local_superuser_token.c_str());
 
 //	msync()
 
 	amsd_operation_register("glimpse", &amsd_operation_glimpse);
 	amsd_operation_register("farmap", &amsd_operation_farmap);
+	amsd_operation_register("user", &amsd_operation_user);
 	amsd_operation_register("history", &amsd_operation_history);
 	amsd_operation_register("status", &amsd_operation_status);
 	amsd_operation_register("issues", &amsd_operation_issues);
@@ -92,6 +92,7 @@ int main() {
 	amsd_operation_register("mailreport", &amsd_operation_mailreport);
 	amsd_operation_register("config", &amsd_operation_config);
 	amsd_operation_register("rawapi", &amsd_operation_rawapi);
+	amsd_operation_register("login", &amsd_operation_login);
 
 
 

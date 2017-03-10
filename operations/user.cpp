@@ -20,7 +20,14 @@
 
 
 int amsd_operation_user(json_t *in_data, json_t *&out_data){
+
 	json_t *j_op = json_object_get(in_data, "op");
+	json_t *j_user, *j_passwd;
+	json_t *j_token;
+
+	int login_status;
+
+	string user, passwd, token;
 
 	if (!json_is_string(j_op))
 		return -1;
@@ -28,8 +35,8 @@ int amsd_operation_user(json_t *in_data, json_t *&out_data){
 	string op(json_string_value(j_op));
 
 
-
 	if (op == "add") {
+
 
 	} else if (op == "upd") {
 

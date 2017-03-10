@@ -34,10 +34,12 @@
 #include <netinet/in.h>
 
 #include <jansson.h>
+#include <sys/mman.h>
 
 using namespace std;
 
 char *socket_path = (char *)"/tmp/.amsd_socket";
+char *shm_path = (char *)"/var/lib/ams/shm";
 
 json_t *j_req = json_object();
 json_t *j_req_data = json_object();
@@ -153,12 +155,21 @@ int main(int argc, char **argv){
 	char **ops_argv = &argv[1];
 	char *serialized_j_req;
 	string ret;
+	int shm_fd;
+	char *amsd_shm;
 
-	if (argv[1])
+	if (argv[1]) {
 		if (0 == strcmp(argv[1], "lol")) {
 			cerr << "THIS IS THE DOC.\n";
 			exit(0);
 		}
+
+		if (0 == strcmp(argv[1], "喵喵喵")) {
+			cerr << "哒哒哒\n";
+			exit(0);
+		}
+
+	}
 
 	if (argc < 3)
 		goto badarg;
@@ -169,6 +180,25 @@ int main(int argc, char **argv){
 		ops_argv = &argv[3];
 	}
 
+	shm_fd = open(shm_path, O_RDWR);
+
+	if (shm_fd < 1) {
+		fprintf(stderr,"amsd_cli: failed to open shared memory file: %s\n", strerror(errno));
+		cerr << "amsd_cli: Please check whether AMSD is running!\n";
+		return 2;
+	}
+
+	amsd_shm = (char *)mmap(0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	if (!amsd_shm) {
+		fprintf(stderr,"amsd_cli: failed to map shared memory file: %s\n", strerror(errno));
+		return 2;
+	}
+
+	fprintf(stderr,"amsd_cli: attached 8KB shared memory at %p\n", (void *)amsd_shm);
+
+
+	json_object_set_new(j_req, "auth", json_string(amsd_shm));
 	json_object_set_new(j_req, "operation", json_string(ops_argv[0]));
 
 	if (0 == strcmp(ops_argv[0], "controller")) {
@@ -189,6 +219,7 @@ int main(int argc, char **argv){
 	ret = req(serialized_j_req);
 
 	cerr << ret << endl;
+
 
 	exit(0);
 

@@ -18,15 +18,26 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_glimpse(json_t *in_data, json_t *&out_data){
+
+int amsd_operation_login(json_t *in_data, json_t *&out_data){
 	NoLoginReq_Flag;
 
-	Report::Report rpt("", 0);
+	json_t *j_user = json_object_get(in_data, "user");
+	json_t *j_passwd = json_object_get(in_data, "passwd");
 
-	json_object_set_new(out_data, "mods", json_integer((long)rpt.Farm0.Modules));
-	json_object_set_new(out_data, "ctls", json_integer((long)rpt.Farm0.Controllers.size()));
-	json_object_set_new(out_data, "mhs", json_real((double)rpt.Farm0.MHS));
-	json_object_set_new(out_data, "mhs_t", json_integer((long)rpt.Farm0.Modules*1000*7300));
+	if (!json_is_string(j_user) || !json_is_string(j_passwd))
+		return -1;
+
+	string token;
+	string user = string(json_string_value(j_user));
+	string passwd = string(json_string_value(j_passwd));
+
+	int login_status = amsd_user_login(user, passwd, token);
+
+	if (login_status)
+		return -2;
+
+	json_object_set_new(out_data, "token", json_string(token.c_str()));
 
 	return 0;
 }

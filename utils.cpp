@@ -167,3 +167,16 @@ string strbindna(void *dna){
 	string ret = string(sbuf);
 	return ret;
 }
+
+bool isOperationNoAuthPermitted(void *func){ // NOTE: Only use with amsd_operation_* functions!!
+	uint8_t *first_func_call = (uint8_t *)func;
+#if defined(__i386__) || defined(__x86_64__)
+	first_func_call = (uint8_t *)memmem(func, 256, "\xe8", 1);
+	return memmem(func, first_func_call - (uint8_t *)func, "\x90\x90\x90\x90", 4) != NULL;
+#endif
+#if defined(__arm__)
+	first_func_call = memmem(func, 256, "\xeb", 1);
+	return memmem(func, first_func_call - func, "\xe1\xa0\x00\x00\xe1\xa0\x00\x00\xe1\xa0\x00\x00\xe1\xa0\x00\x00", 16) != NULL;
+#endif
+	return false;
+}

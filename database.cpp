@@ -27,6 +27,7 @@ const char *dbpath_pool = NULL;
 const char *dbpath_device = NULL;
 const char *dbpath_module_avalon7 = NULL;
 const char *dbpath_issue = NULL;
+const char *dbpath_user = NULL;
 
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
@@ -226,6 +227,7 @@ int amsd_db_init(){
 	dbpath_pool = db["pool"].first.c_str();
 	dbpath_device = db["device"].first.c_str();
 	dbpath_issue = db["issue"].first.c_str();
+	dbpath_user = db["user"].first.c_str();
 
 	return 0;
 

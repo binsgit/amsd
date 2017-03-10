@@ -20,6 +20,8 @@
 
 
 int amsd_operation_issues(json_t *in_data, json_t *&out_data){
+	NoLoginReq_Flag;
+
 	sqlite3 *thismoduledb, *thisissuedb;
 	sqlite3_stmt *stmt;
 	json_t *j_issues, *j_issue, *j_avalonerr;

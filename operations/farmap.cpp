@@ -29,6 +29,8 @@ public:
 };
 
 int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
+	NoLoginReq_Flag;
+
 	sqlite3 *db[3];
 	sqlite3_stmt *stmt[3];
 
