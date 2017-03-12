@@ -25,7 +25,7 @@ uint8_t *amsd_shm = NULL;
 
 int main() {
 
-	fprintf(stderr, "Avalon Management System Daemon v0.1 - Get things done rapidly!\n");
+	fprintf(stderr, "Avalon Management System Daemon v%.2f - Get things done rapidly!\n", AMSD_VERSION);
 
 	mkdir("/etc/ams/", 0755);
 	mkdir(path_runtime.c_str(), 0755);
@@ -93,6 +93,7 @@ int main() {
 	amsd_operation_register("config", &amsd_operation_config);
 	amsd_operation_register("rawapi", &amsd_operation_rawapi);
 	amsd_operation_register("login", &amsd_operation_login);
+	amsd_operation_register("version", &amsd_operation_version);
 
 
 

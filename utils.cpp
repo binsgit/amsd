@@ -103,37 +103,33 @@ string hashrate_h(long double mhs){
 	string ret;
 	char sbuf[32];
 
-	if (mhs > 1000000000000000) {
-		snprintf(sbuf, 31, "%.2Lf", mhs/1000000000000);
-		ret += sbuf;
-		ret += " EH/s";
-		return ret;
-	}
+	long double duhs = mhs;
+	const char *unitstr = " MH/s";
 
 	if (mhs > 1000000000000) {
-		snprintf(sbuf, 31, "%.2Lf", mhs/1000000000);
-		ret += sbuf;
-		ret += " PH/s";
-		return ret;
+		duhs = mhs/1000000000000;
+		unitstr = " EH/s";
 	}
 
 	if (mhs > 1000000000) {
-		snprintf(sbuf, 31, "%.2Lf", mhs/1000000);
-		ret += sbuf;
-		ret += " TH/s";
-		return ret;
+		duhs = mhs/1000000000;
+		unitstr = " PH/s";
 	}
 
 	if (mhs > 1000000) {
-		snprintf(sbuf, 31, "%.2Lf", mhs/1000);
-		ret += sbuf;
-		ret += " GH/s";
-		return ret;
+		duhs = mhs/1000000;
+		unitstr = " TH/s";
 	}
 
+	if (mhs > 1000) {
+		duhs = mhs/1000;
+		unitstr = " GH/s";
+	}
+
+	final:
 	snprintf(sbuf, 31, "%.2Lf", mhs);
 	ret += sbuf;
-	ret += " MH/s";
+	ret += unitstr;
 	return ret;
 }
 

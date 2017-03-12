@@ -32,7 +32,7 @@ const char *dbpath_user = NULL;
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
-	{"user", spair("", "(UID INT PRIMARY KEY, UserType INT, UserName TEXT, NickName TEXT, Password BLOB(64), " // SHA512
+	{"user", spair("", "(UID INT NOT NULL PRIMARY KEY AUTOINCREMENT, UserType INT, UserName TEXT, NickName TEXT, Password BLOB(64), " // SHA512
 		"Token TEXT, CTime INT, MTime INT, ATime INT, Avatar BLOB, ExtData BLOB, "
 		"UNIQUE(UserName) ON CONFLICT ABORT)")},
 	{"issue", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "

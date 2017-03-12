@@ -70,6 +70,9 @@
 #include "lib/api_parser.hpp"
 #include "lib/avalon_errno.hpp"
 
+#define AMSD_VERSION		1.00
+
+
 using namespace std;
 
 #define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
@@ -189,6 +192,7 @@ extern int amsd_operation_ascset(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_rawapi(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_user(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_login(json_t *in_data, json_t *&out_data);
+extern int amsd_operation_version(json_t *in_data, json_t *&out_data);
 
 class User {
     string UserName;

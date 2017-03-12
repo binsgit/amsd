@@ -19,25 +19,12 @@
 #include "../amsd.hpp"
 
 
-int amsd_operation_login(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
+int amsd_operation_version(json_t *in_data, json_t *&out_data){
+	json_t *j_version = json_object();
+	json_t *j_amsd_version = json_real(AMSD_VERSION);
 
-	json_t *j_user = json_object_get(in_data, "username");
-	json_t *j_passwd = json_object_get(in_data, "passwd");
-
-	if (!json_is_string(j_user) || !json_is_string(j_passwd))
-		return -1;
-
-	string token;
-	string user = string(json_string_value(j_user));
-	string passwd = string(json_string_value(j_passwd));
-
-	int login_status = amsd_user_login(user, passwd, token);
-
-	if (login_status)
-		return -2;
-
-	json_object_set_new(out_data, "token", json_string(token.c_str()));
+	json_object_set_new(j_version, "amsd", j_amsd_version);
+	json_object_set_new(out_data, "version", j_version);
 
 	return 0;
 }

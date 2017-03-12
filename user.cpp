@@ -19,7 +19,8 @@
 #include "amsd.hpp"
 
 string amsd_local_superuser_token = amsd_random_string();
-
+set<string> token_cache;
+shared_timed_mutex Lock_TokenCache;
 
 int amsd_user_login(string user, string passwd, string &token){
 
@@ -45,6 +46,11 @@ int amsd_user_login(string user, string passwd, string &token){
 
 	if (!sqlite3_changes(db))
 		ret = 2;
+	else {
+		Lock_TokenCache.lock();
+		token_cache.insert(token);
+		Lock_TokenCache.unlock();
+	}
 
 	sqlite3_finalize(stmt);
 	db_close(db);
@@ -60,6 +66,13 @@ int amsd_user_auth(string token, User *userinfo){
 	sqlite3_stmt *stmt;
 	int ret = 0;
 
+	Lock_TokenCache.lock_shared();
+	auto meow = token_cache.find(token);
+	Lock_TokenCache.unlock_shared();
+
+	if (meow != token_cache.end())
+		return 0;
+
 	db_open(dbpath_user, db);
 
 	sqlite3_prepare(db, "SELECT * FROM user WHERE Token = ?1", -1, &stmt, NULL);
@@ -67,6 +80,9 @@ int amsd_user_auth(string token, User *userinfo){
 	sqlite3_bind_text(stmt, 1, token.c_str(), -1, SQLITE_STATIC);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		Lock_TokenCache.lock();
+		token_cache.insert(token);
+		Lock_TokenCache.unlock();
 		if (userinfo) {
 
 		}

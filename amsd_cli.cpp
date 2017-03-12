@@ -57,13 +57,40 @@ void help(){
 		"        list                            List controllers\n"
 		"        add <ip:port> [<ip:port>...]    Add controller(s)\n"
 		"        del <ip:port> [<ip:port>...]    Delete controller(s)\n"
+		"    user:\n"
+		"        list                            List users\n"
+		"        add <username> <passwd>         Add user\n"
+		"        del <username>                  Delete user\n"
 		"    mailreport:\n"
 		"        meow                            You must meow to send a mail report\n"
-		"        anything                        Or if you really don't want to be cute...\n"
+		"        anything                        Or if you really don't want to be cute...QAQ\n"
 		"\n"
 		"Examples:\n"
 		"    # amsd_cli controller list\n"
 		"    # amsd_cli -s /tmp/niconico_socket fwver 192.168.1.233\n");
+}
+
+void f_user(char **argv){
+	json_t *j_op = json_string(argv[0]);
+	json_object_set_new(j_req_data, "op", j_op);
+
+	if ((0 == strcmp(argv[0], "list"))||((0 == strcmp(argv[0], "wipe")))) {
+
+	} else if ((0 == strcmp(argv[0], "add")) || (0 == strcmp(argv[0], "del"))) {
+
+		if (!argv[1] || !argv[2]) {
+			cerr << "user: error: please specify both username and password" << endl;
+			exit(2);
+		}
+
+		json_object_set_new(j_req_data, "username", json_string(argv[1]));
+		json_object_set_new(j_req_data, "passwd", json_string(argv[2]));
+
+	} else {
+		cerr << "user: error: bad operation: " << argv[0] << endl;
+		exit(2);
+	}
+
 }
 
 void f_controller(char **argv){
@@ -205,6 +232,8 @@ int main(int argc, char **argv){
 		f_controller(ops_argv+1);
 	} else if (0 == strcmp(ops_argv[0], "mailreport")) {
 
+	} else if (0 == strcmp(ops_argv[0], "user")) {
+		f_user(ops_argv+1);
 	} else {
 		cerr << "error: " << ops_argv[0] << " is not an AMSD operation.\n";
 		exit(2);
