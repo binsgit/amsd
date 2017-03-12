@@ -28,3 +28,5 @@ add_executable(ams_cgi ams_cgi.cpp)
 target_link_libraries(ams_cgi)
 target_link_libraries(amsd_cli jansson)
 target_link_libraries(amsd pthread jansson ssh2 sqlite3 event curl b64 crypto)
+
+install(TARGETS amsd_cli amsd DESTINATION bin)
