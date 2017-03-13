@@ -59,6 +59,7 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
+#include "compatibility.hpp"
 
 #include "core/data_collector.hpp"
 #include "core/report.hpp"
