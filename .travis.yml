@@ -1,0 +1,20 @@
+language: cpp
+dist: xenial
+compiler: gcc
+os: linux
+
+addons:
+  apt:
+    packages:
+    - build-essential
+    - cmake
+    - libssl-dev
+    - libjansson-dev
+    - libssh2-1-dev
+    - libsqlite3-dev
+    - libevent-dev
+    - libcurl4-openssl-dev
+    - libb64-dev
+
+script:
+- mkdir build && cd build && cmake .. && make
