@@ -2,6 +2,7 @@ language: cpp
 dist: trusty
 compiler: gcc
 os: linux
+sudo: required
 
 addons:
   apt:
@@ -16,5 +17,13 @@ addons:
     - libcurl4-openssl-dev
     - libb64-dev
 
+before_script:
+- sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+- sudo apt-get update -qq
+- sudo apt-get install gcc-5 g++-5 -y
+- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 1 --slave /usr/bin/g++ g++ /usr/bin/g++-5
+
 script:
 - mkdir build && cd build && cmake .. && make
+
+install: true
