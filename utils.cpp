@@ -131,7 +131,7 @@ string hashrate_h(long double mhs){
 	}
 
 	final:
-	snprintf(sbuf, 31, "%.2Lf", mhs);
+	snprintf(sbuf, 31, "%.2Lf", duhs);
 	ret += sbuf;
 	ret += unitstr;
 	return ret;

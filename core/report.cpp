@@ -37,6 +37,7 @@ void Report::Report::CollectData() {
 	uint8_t *blobuf;
 
 	string sbuf0, sbuf1;
+	char *cbuf0, *cbuf1;
 	size_t lubuf0;
 
 	Controller ctlbuf;
@@ -89,11 +90,23 @@ void Report::Report::CollectData() {
 				sbuf1 = string((char *) sqlite3_column_text(stmtbuf1, 1));
 				lubuf0 = (size_t) sqlite3_column_int64(stmtbuf1, 2);
 
+
+				cbuf0 = (char *)strchr(sbuf1.c_str(), '.');
+
+				if (cbuf0) {
+					cbuf1 = strdupa(sbuf1.c_str());
+					cbuf1[cbuf0-sbuf1.c_str()] = 0;
+					sbuf1 = string(cbuf1);
+				}
+
+
 				poolbuf = &Farm0.Pools[pair<string, string>(sbuf0, sbuf1)];
 
 				poolbuf->URL = sbuf0;
 				poolbuf->User = sbuf1;
-				poolbuf->GHS = diffaccept2ghs(lubuf0, ctl.Elapsed);
+				poolbuf->GHS += diffaccept2ghs(lubuf0, ctl.Elapsed);
+
+				cerr << diffaccept2ghs(lubuf0, ctl.Elapsed) << endl;
 			}
 
 			sqlite3_reset(stmtbuf1);
