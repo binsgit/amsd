@@ -109,21 +109,25 @@ string hashrate_h(long double mhs){
 	if (mhs > 1000000000000) {
 		duhs = mhs/1000000000000;
 		unitstr = " EH/s";
+		goto final;
 	}
 
 	if (mhs > 1000000000) {
 		duhs = mhs/1000000000;
 		unitstr = " PH/s";
+		goto final;
 	}
 
 	if (mhs > 1000000) {
 		duhs = mhs/1000000;
 		unitstr = " TH/s";
+		goto final;
 	}
 
 	if (mhs > 1000) {
 		duhs = mhs/1000;
 		unitstr = " GH/s";
+		goto final;
 	}
 
 	final:
