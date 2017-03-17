@@ -24,6 +24,7 @@ int amsd_request_parse(char *inputstr, string &outputstr){
 	json_t *i_json_root = json_loads((const char *)inputstr, 0, &err);
 	json_t *j_operation, *j_data, *o_json_root, *o_json_opdata, *o_json_rc;
 	json_t *j_auth;
+	std::pair<void *, bool> thisopt;
 	string operation;
 	int (*op)(json_t *in_data, json_t *&out_data);
 	char *serialized_out;
@@ -66,17 +67,19 @@ int amsd_request_parse(char *inputstr, string &outputstr){
 
 	operation = string(json_string_value(j_operation));
 
-	op = (int (*)(json_t *, json_t *&))amsd_operation_get(operation);
-
-	if (!op) {
+	try {
+		thisopt = amsd_operation_get(operation);
+	} catch (int e) {
 		fprintf(stderr, "amsd: request %p: error: operation `%s' unregistered\n", (void *)inputstr, operation.c_str());
 		goto parseerr;
 	}
 
+	op = (int (*)(json_t *, json_t *&))thisopt.first;
+
 	j_auth = json_object_get(i_json_root, "auth");
 
 	if (!json_is_string(j_auth)) {
-		if (!isOperationNoAuthPermitted((void *)op)) {
+		if (thisopt.second) {
 			fprintf(stderr, "amsd: request %p: error: operation `%s' requires authentication\n", (void *)inputstr, operation.c_str());
 			goto autherr;
 		}

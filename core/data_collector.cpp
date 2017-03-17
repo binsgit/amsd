@@ -29,7 +29,7 @@ static const string api_cmd_pools = "{\"command\":\"pools\"}";
 #define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
 
-time_t last_collect_time = 0;
+time_t Timestamp_LastFinishedCollection = 0;
 
 shared_timed_mutex Lock_DataCollector;
 
@@ -154,7 +154,7 @@ static void amsd_datacollector_instance(){
 	}
 
 
-	last_collect_time = time(NULL);
+	Timestamp_LastFinishedCollection = time(NULL);
 
 	db_open(dbpath_summary, db_handles[0]);
 	db_open(dbpath_module_avalon7, db_handles[1]);
@@ -206,7 +206,7 @@ static void amsd_datacollector_instance(){
 				bufferevent_free(bebuf);
 				continue;
 			} else {
-				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, db_handles, last_collect_time, remote_inaddr, (size_t)inaddr_len, remote_port);
+				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, db_handles, Timestamp_LastFinishedCollection, remote_inaddr, (size_t)inaddr_len, remote_port);
 				bufferevent_setcb(bebuf, conn_readcb, conn_writecb, event_cb, abuf);
 				bufferevent_enable(bebuf, EV_READ | EV_WRITE);
 			}

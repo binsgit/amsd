@@ -51,7 +51,7 @@ void Report::Report::CollectData() {
 
 
 	sqlite3_prepare_v2(thissummarydb, "SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port", -1, &stmtbuf0, NULL);
-	sqlite3_bind_int64(stmtbuf0, 1, last_collect_time);
+	sqlite3_bind_int64(stmtbuf0, 1, Timestamp_LastFinishedCollection);
 
 	while (sqlite3_step(stmtbuf0) == SQLITE_ROW){
 
@@ -119,7 +119,7 @@ void Report::Report::CollectData() {
 	}
 
 	sqlite3_prepare_v2(thismoduledb, "SELECT Count(*) FROM module_avalon7 WHERE Time = ?1", -1, &stmtbuf2, NULL);
-	sqlite3_bind_int64(stmtbuf2, 1, last_collect_time);
+	sqlite3_bind_int64(stmtbuf2, 1, Timestamp_LastFinishedCollection);
 	sqlite3_step(stmtbuf2);
 
 	Farm0.Modules = (size_t)sqlite3_column_int64(stmtbuf2, 0);
@@ -154,7 +154,7 @@ string Report::Report::HTMLReport() {
 			     "<body>"
 			     "<h3><b>AMS报告：" + Name + "</b></h3>"
 			     "<h4><b>当前概况</b></h4><table><tbody>"
-			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(last_collect_time) + "</th></tr>"
+			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(Timestamp_LastFinishedCollection) + "</th></tr>"
 			     "<tr><th>总算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
 			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
 			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"

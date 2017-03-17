@@ -122,7 +122,7 @@ extern string path_runtime;
 extern map<string, map<string, string>> Config;
 extern pthread_attr_t _pthread_detached;
 
-extern time_t last_collect_time;
+extern time_t Timestamp_LastFinishedCollection;
 
 extern shared_timed_mutex Lock_DataCollector;
 extern shared_timed_mutex Lock_Config;
@@ -175,8 +175,8 @@ extern int amsd_user_auth(string token, User *userinfo);
 extern int amsd_request_parse(char *inputstr, string &outputstr);
 
 // Operations
-extern void *amsd_operation_get(string name);
-extern bool amsd_operation_register(string name, int (*pfunc)(json_t*, json_t*&));
+extern std::pair<void *, bool> amsd_operation_get(std::string name);
+extern bool amsd_operation_register(string name, int (*pfunc)(json_t*, json_t*&), bool auth_required=1);
 
 extern int amsd_operation_glimpse(json_t *in_data, json_t *&out_data);
 extern int amsd_operation_history(json_t *in_data, json_t *&out_data);

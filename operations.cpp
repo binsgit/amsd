@@ -18,19 +18,21 @@
 
 #include "amsd.hpp"
 
-std::map<std::string, void *> Operations;
+std::map<std::string, std::pair<void *, bool>> Operations;
 
-void *amsd_operation_get(std::string name) {
-	std::map<std::string, void *>::const_iterator target = Operations.find(name);
+std::pair<void *, bool> amsd_operation_get(std::string name) {
+	std::map<std::string, std::pair<void *, bool>>::const_iterator target = Operations.find(name);
 
 	if (target == Operations.end())
-		return NULL;
+		throw 0x23336666;
 	else
 		return target->second;
 }
 
-bool amsd_operation_register(std::string name, int (*pfunc)(json_t*, json_t*&)) {
-	if (Operations.insert(std::pair<std::string, void *>(name, (void *)pfunc)).second) {
+bool amsd_operation_register(std::string name, int (*pfunc)(json_t*, json_t*&), bool auth_required) {
+	std::pair<void *, bool> thisopt = std::pair<void *, bool>((void *)pfunc, auth_required);
+
+	if (Operations.insert(std::pair<std::string, std::pair<void *, bool>>(name, thisopt)).second) {
 		fprintf(stderr, "amsd: operations: Registered operation `%s' at %p\n", name.c_str(), pfunc);
 		return true;
 	} else {

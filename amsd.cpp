@@ -76,13 +76,13 @@ int main() {
 
 	snprintf((char *)amsd_shm, 256, "%s", amsd_local_superuser_token.c_str());
 
-	amsd_operation_register("glimpse", &amsd_operation_glimpse);
-	amsd_operation_register("farmap", &amsd_operation_farmap);
+	amsd_operation_register("glimpse", &amsd_operation_glimpse, 0);
+	amsd_operation_register("farmap", &amsd_operation_farmap, 0);
 	amsd_operation_register("user", &amsd_operation_user);
-	amsd_operation_register("history", &amsd_operation_history);
-	amsd_operation_register("status", &amsd_operation_status);
-	amsd_operation_register("issues", &amsd_operation_issues);
-	amsd_operation_register("fwver", &amsd_operation_fwver);
+	amsd_operation_register("history", &amsd_operation_history, 0);
+	amsd_operation_register("status", &amsd_operation_status, 0);
+	amsd_operation_register("issues", &amsd_operation_issues, 0);
+	amsd_operation_register("fwver", &amsd_operation_fwver, 0);
 	amsd_operation_register("ascset", &amsd_operation_ascset);
 	amsd_operation_register("mmupgrade", &amsd_operation_mmupgrade);
 	amsd_operation_register("supertac", &amsd_operation_supertac);
@@ -90,8 +90,8 @@ int main() {
 	amsd_operation_register("mailreport", &amsd_operation_mailreport);
 	amsd_operation_register("config", &amsd_operation_config);
 	amsd_operation_register("rawapi", &amsd_operation_rawapi);
-	amsd_operation_register("login", &amsd_operation_login);
-	amsd_operation_register("version", &amsd_operation_version);
+	amsd_operation_register("login", &amsd_operation_login, 0);
+	amsd_operation_register("version", &amsd_operation_version, 0);
 
 	cerr << "Remember: Too many rules will ONLY make people STUPID. - Author\n";
 

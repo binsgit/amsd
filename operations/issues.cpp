@@ -52,7 +52,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 		"FROM module_avalon7 WHERE Time = ?1 AND "
 		"(ECHU_0 > 0 OR ECHU_1 > 0 OR ECHU_2 > 0 OR ECHU_3 > 0)", -1, &stmt, NULL);
 
-	sqlite3_bind_int64(stmt, 1, last_collect_time);
+	sqlite3_bind_int64(stmt, 1, Timestamp_LastFinishedCollection);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		j_issue = json_object();
@@ -113,7 +113,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 	sqlite3_prepare(thisissuedb, "SELECT Addr, Port, Type FROM issue WHERE Time = ?1 "
 		"AND Type >= 0x10 AND Type < 0x20", -1, &stmt, NULL);
 
-	sqlite3_bind_int64(stmt, 1, last_collect_time);
+	sqlite3_bind_int64(stmt, 1, Timestamp_LastFinishedCollection);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		j_issue = json_object();
@@ -126,9 +126,9 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 		port = (uint16_t)sqlite3_column_int(stmt, 1);
 
 		inet_ntop(addrlen == 4 ? AF_INET : AF_INET6, addr, addrsbuf, addrlen == 4 ? INET_ADDRSTRLEN : INET6_ADDRSTRLEN);
-		snprintf(addrsbuf+strlen(addrsbuf), 6, ":%" PRIu16, port);
 
-		json_object_set_new(j_issue, "addr", json_string(addrsbuf));
+		json_object_set_new(j_issue, "ip", json_string(addrsbuf));
+		json_object_set_new(j_issue, "port", json_integer(port));
 
 
 		sebuf = Issue::Issue::strerror((uint64_t)typebuf);
