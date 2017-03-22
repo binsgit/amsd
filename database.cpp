@@ -207,7 +207,8 @@ int amsd_db_init(){
 
 
 		if (!inited) {
-			string stmt = "PRAGMA journal_mode=WAL; CREATE TABLE " + it->first + " " + it->second.second;
+			string stmt = "PRAGMA journal_mode=WAL; PRAGMA page_size=4096; "
+					      "CREATE TABLE " + it->first + " " + it->second.second;
 			fprintf(stderr, "amsd: database: initializing database %s\n", it->first.c_str());
 			if (sqlite3_exec(thisdb, stmt.c_str(), NULL, NULL, NULL)) {
 				fprintf(stderr, "amsd: database: failed to initialize database %s: %s\n", it->first.c_str(),

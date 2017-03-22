@@ -71,6 +71,50 @@ string amsd_strerror(GeneralStatus status, string xmsg) {
 	return amsd_strerror(status) + ": " + xmsg;
 }
 
+uint8_t *reimu_shm_open(string path, size_t size, bool trunc){
+
+	uint8_t *shm_ret;
+	int shm_fd;
+	bool retried = 0;
+	int openflags = O_RDWR;
+
+	if (trunc)
+		openflags |= O_CREAT|O_TRUNC;
+
+	shm_fd = open(path.c_str(), openflags);
+
+	meow:
+	if (shm_fd < 1) {
+		if (!retried)
+			if (errno == ENOENT) {
+				retried = 1;
+				shm_fd = open(path.c_str(), O_RDWR|O_CREAT, 0600);
+				goto meow;
+			}
+
+		fprintf(stderr,"amsd: reimu_shm_open: failed to open shared memory file: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	if (posix_fallocate(shm_fd, 0, size)) {
+		fprintf(stderr,"amsd: reimu_shm_open: failed to allocate shared memory file at %s: %s\n", path.c_str(), strerror(errno));
+		return NULL;
+	}
+
+	shm_ret = (uint8_t *)mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	if (!shm_ret) {
+		fprintf(stderr,"amsd: reimu_shm_open: failed to map shared memory file: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	close(shm_fd);
+
+	fprintf(stderr,"amsd: reimu_shm_open: %zu bytes shared memory at %p\n", size, (void *)shm_ret);
+
+	return shm_ret;
+}
+
 // My strrnchr(): Returns a pointer to the n'st occurrence of the character c in the string s in reverse direction.
 
 char *strrnchr(char *s, int c, size_t n){

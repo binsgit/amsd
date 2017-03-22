@@ -43,7 +43,7 @@ void Report::Report::CollectData() {
 	Controller ctlbuf;
 	Pool *poolbuf;
 
-	Lock_DataCollector.lock();
+//	Lock_DataCollector.lock();
 
 	db_open(dbpath_summary, thissummarydb);
 	db_open(dbpath_module_avalon7, thismoduledb);
@@ -51,7 +51,7 @@ void Report::Report::CollectData() {
 
 
 	sqlite3_prepare_v2(thissummarydb, "SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port", -1, &stmtbuf0, NULL);
-	sqlite3_bind_int64(stmtbuf0, 1, Timestamp_LastFinishedCollection);
+	sqlite3_bind_int64(stmtbuf0, 1, RuntimeData::TimeStamp::LastDataCollection());
 
 	while (sqlite3_step(stmtbuf0) == SQLITE_ROW){
 
@@ -74,15 +74,16 @@ void Report::Report::CollectData() {
 		db_open(dbpath_pool, thispooldb);
 		sqlite3_prepare_v2(thispooldb, "SELECT URL, User, DifficultyAccepted FROM pool WHERE "
 			"LENGTH(URL) > 7 AND "
-			"Time > ((SELECT Max(Time) FROM pool) - 86400) AND "
-			"Addr = ?1 AND "
-			"Port = ?2 "
+			"Time > ?1 AND "
+			"Addr = ?2 AND "
+			"Port = ?3 "
 			"GROUP BY URL", -1, &stmtbuf1, NULL);
 
 		for (auto const &ctl: Farm0.Controllers) {
 
-			sqlite3_bind_blob64(stmtbuf1, 1, &ctl.Addr[0], ctl.Addr.size(), SQLITE_STATIC);
-			sqlite3_bind_int(stmtbuf1, 2, ctl.Port);
+			sqlite3_bind_int64(stmtbuf1, 1, RuntimeData::TimeStamp::LastDataCollection()-86400);
+			sqlite3_bind_blob64(stmtbuf1, 2, &ctl.Addr[0], ctl.Addr.size(), SQLITE_STATIC);
+			sqlite3_bind_int(stmtbuf1, 3, ctl.Port);
 
 
 			while (sqlite3_step(stmtbuf1) == SQLITE_ROW) {
@@ -119,7 +120,7 @@ void Report::Report::CollectData() {
 	}
 
 	sqlite3_prepare_v2(thismoduledb, "SELECT Count(*) FROM module_avalon7 WHERE Time = ?1", -1, &stmtbuf2, NULL);
-	sqlite3_bind_int64(stmtbuf2, 1, Timestamp_LastFinishedCollection);
+	sqlite3_bind_int64(stmtbuf2, 1, RuntimeData::TimeStamp::LastDataCollection());
 	sqlite3_step(stmtbuf2);
 
 	Farm0.Modules = (size_t)sqlite3_column_int64(stmtbuf2, 0);
@@ -130,7 +131,7 @@ void Report::Report::CollectData() {
 	db_close(thismoduledb);
 
 
-	Lock_DataCollector.unlock();
+//	Lock_DataCollector.unlock();
 }
 
 string Report::Report::HTMLReport() {
@@ -154,7 +155,7 @@ string Report::Report::HTMLReport() {
 			     "<body>"
 			     "<h3><b>AMS报告：" + Name + "</b></h3>"
 			     "<h4><b>当前概况</b></h4><table><tbody>"
-			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(Timestamp_LastFinishedCollection) + "</th></tr>"
+			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(RuntimeData::TimeStamp::LastDataCollection()) + "</th></tr>"
 			     "<tr><th>总算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
 			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
 			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"

@@ -43,7 +43,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 
 	j_issues = json_array();
 
-	Lock_DataCollector.lock();
+//	Lock_DataCollector.lock();
 
 	db_open(dbpath_module_avalon7, thismoduledb);
 
@@ -52,7 +52,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 		"FROM module_avalon7 WHERE Time = ?1 AND "
 		"(ECHU_0 > 0 OR ECHU_1 > 0 OR ECHU_2 > 0 OR ECHU_3 > 0)", -1, &stmt, NULL);
 
-	sqlite3_bind_int64(stmt, 1, Timestamp_LastFinishedCollection);
+	sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection());
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		j_issue = json_object();
@@ -113,7 +113,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 	sqlite3_prepare(thisissuedb, "SELECT Addr, Port, Type FROM issue WHERE Time = ?1 "
 		"AND Type >= 0x10 AND Type < 0x20", -1, &stmt, NULL);
 
-	sqlite3_bind_int64(stmt, 1, Timestamp_LastFinishedCollection);
+	sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection());
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		j_issue = json_object();
@@ -142,7 +142,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 	sqlite3_finalize(stmt);
 	db_close(thisissuedb);
 
-	Lock_DataCollector.unlock();
+//	Lock_DataCollector.unlock();
 
 	json_object_set_new(out_data, "issues", j_issues);
 

@@ -51,24 +51,19 @@ int main() {
 	if (rc_dbinit)
 		return 2;
 
+	if (RuntimeData::Init() != 0){
+		fprintf(stderr,"amsd: RuntimeData::Init() failed\n");
+		return 2;
+	}
+
+
 	string shm_path = path_runtime + "shm";
 
-	int shm_fd = open(shm_path.c_str(), O_RDWR|O_CREAT|O_TRUNC);
 
-	if (shm_fd < 1) {
-		fprintf(stderr,"amsd: failed to open shared memory file: %s\n", strerror(errno));
-		return 2;
-	}
-
-	if (posix_fallocate(shm_fd, 0, 8192)) {
-		fprintf(stderr,"amsd: failed to allocate shared memory file: %s\n", strerror(errno));
-		return 2;
-	}
-
-	amsd_shm = (uint8_t *)mmap(0, 8192, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	amsd_shm = reimu_shm_open(shm_path, 8192, 1);
 
 	if (!amsd_shm) {
-		fprintf(stderr,"amsd: failed to map shared memory file: %s\n", strerror(errno));
+		fprintf(stderr,"amsd: reimu_shm_open() failed\n");
 		return 2;
 	}
 

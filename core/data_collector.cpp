@@ -29,9 +29,6 @@ static const string api_cmd_pools = "{\"command\":\"pools\"}";
 #define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
 
-time_t Timestamp_CurrentCollection = 0;
-time_t Timestamp_LastFinishedCollection = 0;
-
 shared_timed_mutex Lock_DataCollector;
 
 map<ReimuInetAddr, Avalon_Controller> Controllers;
@@ -205,7 +202,7 @@ static void amsd_datacollector_instance(){
 				bufferevent_free(bebuf);
 				continue;
 			} else {
-				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, db_handles, Timestamp_CurrentCollection, remote_inaddr, (size_t)inaddr_len, remote_port);
+				abuf = new CgMinerAPIProcessor((CgMinerAPIProcessor::CgMiner_APIType)apicat, db_handles, RuntimeData::TimeStamp::CurrentDataCollection(), remote_inaddr, (size_t)inaddr_len, remote_port);
 				bufferevent_setcb(bebuf, conn_readcb, conn_writecb, event_cb, abuf);
 				bufferevent_enable(bebuf, EV_READ | EV_WRITE);
 			}
@@ -248,9 +245,9 @@ static void *amsd_datacollector_thread(void *meow){
 		Lock_DataCollector.lock();
 		fprintf(stderr, "amsd: datacollector: collector instance started\n");
 		gettimeofday(&tv_begin, NULL);
-		Timestamp_CurrentCollection = time(NULL);
+		RuntimeData::TimeStamp::CurrentDataCollection(time(NULL));
 		amsd_datacollector_instance();
-		Timestamp_LastFinishedCollection = Timestamp_CurrentCollection;
+		RuntimeData::TimeStamp::LastDataCollection(RuntimeData::TimeStamp::CurrentDataCollection());
 		gettimeofday(&tv_end, NULL);
 		timersub(&tv_end, &tv_begin, &tv_diff);
 		Lock_DataCollector.unlock();

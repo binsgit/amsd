@@ -114,6 +114,7 @@ enum GeneralStatus {
 };
 
 class User;
+class RuntimeData;
 class MMUpgrade;
 class SSHConnection;
 class SuperRTACSession;
@@ -158,6 +159,7 @@ extern char *strrnchr(char *s, int c, size_t n);
 extern string hashrate_h(long double mhs);
 extern double diffaccept2ghs(double diffaccept, size_t elapsed);
 extern string amsd_random_string();
+extern uint8_t *reimu_shm_open(string path, size_t size, bool trunc=0);
 extern string amsd_strerror(GeneralStatus status);
 extern string amsd_strerror(GeneralStatus status, int _errnooo);
 extern string amsd_strerror(GeneralStatus status, string xmsg);
@@ -200,6 +202,19 @@ class User {
     string NickName;
 };
 
+class RuntimeData {
+public:
+    static int Init();
+
+    class TimeStamp {
+    public:
+	static time_t CurrentDataCollection();
+	static void CurrentDataCollection(time_t t);
+
+	static time_t LastDataCollection();
+	static void LastDataCollection(time_t t);
+    };
+};
 
 class MMUpgrade {
 private:

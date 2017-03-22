@@ -47,7 +47,9 @@ int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
 
 	db_open(dbpath_module_avalon7, db[0]);
 	sqlite3_prepare(db[0], "SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE "
-		"Time = (SELECT MAX(Time) FROM module_avalon7)", -1, &stmt[0], NULL);
+		"Time = ?1", -1, &stmt[0], NULL);
+
+	sqlite3_bind_int64(stmt[0], 1, RuntimeData::TimeStamp::LastDataCollection());
 
 	while (sqlite3_step(stmt[0]) == SQLITE_ROW) {
 		addr = (void *)sqlite3_column_blob(stmt[0], 0);
@@ -67,8 +69,10 @@ int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
 	}
 
 	db_open(dbpath_module_avalon7, db[1]);
-	sqlite3_prepare(db[1], "SELECT Addr, Port FROM issue WHERE Time = (SELECT MAX(Time) FROM issue) AND "
+	sqlite3_prepare(db[1], "SELECT Addr, Port FROM issue WHERE Time = ?1 AND "
 		"Type >= 0x10 AND Type < 0x20", -1, &stmt[1], NULL);
+
+	sqlite3_bind_int64(stmt[1], 1, RuntimeData::TimeStamp::LastDataCollection());
 
 	while (sqlite3_step(stmt[1]) == SQLITE_ROW) {
 		addr = (void *)sqlite3_column_blob(stmt[0], 0);

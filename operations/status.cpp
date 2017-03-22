@@ -60,15 +60,16 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 
 	j_summary = json_object();
 
-	Lock_DataCollector.lock();
+//	Lock_DataCollector.lock();
 
 	db_open(dbpath_summary, db[0]);
 
 	sqlite3_prepare(db[0], "SELECT Elapsed, MHSav, Accepted, Rejected, NetworkBlocks, BestShare FROM summary "
-		"WHERE Time = (SELECT MAX(Time) FROM summary) AND Addr = ?1 AND Port = ?2", -1, &stmt[0], NULL);
+		"WHERE Time = ?1 AND Addr = ?2 AND Port = ?3", -1, &stmt[0], NULL);
 
-	sqlite3_bind_blob(stmt[0], 1, addr, addrlen, SQLITE_STATIC);
-	sqlite3_bind_int(stmt[0], 2, port);
+	sqlite3_bind_int64(stmt[0], 1, RuntimeData::TimeStamp::LastDataCollection());
+	sqlite3_bind_blob(stmt[0], 2, addr, addrlen, SQLITE_STATIC);
+	sqlite3_bind_int(stmt[0], 3, port);
 
 	sqlite3_step(stmt[0]);
 
@@ -86,11 +87,12 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 	db_open(dbpath_pool, db[1]);
 
 	sqlite3_prepare(db[1], "SELECT PoolID, URL, StratumActive, User, Status, GetWorks, Accepted, Rejected, Stale, "
-		"LastShareTime, LastShareDifficulty FROM pool WHERE Time = (SELECT MAX(Time) FROM pool) "
-		"AND Addr = ?1 AND Port = ?2", -1, &stmt[1], NULL);
+		"LastShareTime, LastShareDifficulty FROM pool WHERE Time = ?1 "
+		"AND Addr = ?2 AND Port = ?3", -1, &stmt[1], NULL);
 
-	sqlite3_bind_blob(stmt[1], 1, addr, addrlen, SQLITE_STATIC);
-	sqlite3_bind_int(stmt[1], 2, port);
+	sqlite3_bind_int64(stmt[1], 1, RuntimeData::TimeStamp::LastDataCollection());
+	sqlite3_bind_blob(stmt[1], 2, addr, addrlen, SQLITE_STATIC);
+	sqlite3_bind_int(stmt[1], 3, port);
 
 	while (sqlite3_step(stmt[1]) == SQLITE_ROW) {
 
@@ -119,20 +121,22 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 	db_open(dbpath_device, db[2]);
 
 	sqlite3_prepare(db[2], "SELECT ASC, Name, ID, Enabled, Status, Temperature, MHSav, MHS5s, MHS1m, MHS5m, MHS15m, "
-		"LastValidWork FROM device WHERE Time = (SELECT MAX(Time) FROM device) "
-		"AND Addr = ?1 AND Port = ?2", -1, &stmt[2], NULL);
+		"LastValidWork FROM device WHERE Time = ?1 "
+		"AND Addr = ?2 AND Port = ?3", -1, &stmt[2], NULL);
 
-	sqlite3_bind_blob(stmt[2], 1, addr, addrlen, SQLITE_STATIC);
-	sqlite3_bind_int(stmt[2], 2, port);
+	sqlite3_bind_int64(stmt[2], 1, RuntimeData::TimeStamp::LastDataCollection());
+	sqlite3_bind_blob(stmt[2], 2, addr, addrlen, SQLITE_STATIC);
+	sqlite3_bind_int(stmt[2], 3, port);
 
 	db_open(dbpath_module_avalon7, db[3]);
 
 	sqlite3_prepare(db[3], "SELECT DeviceID, ModuleID, LED, Elapsed, Ver, DNA, LW, DH, GHSmm, WU, Temp, TMax, Fan, "
 		"FanR, PG, ECHU_0, ECHU_1, ECHU_2, ECHU_3, ECMM FROM module_avalon7 WHERE "
-		"Time = (SELECT MAX(Time) FROM module_avalon7) AND Addr = ?1 AND Port = ?2", -1, &stmt[3], NULL);
+		"Time = ?1 AND Addr = ?2 AND Port = ?3", -1, &stmt[3], NULL);
 
-	sqlite3_bind_blob(stmt[3], 1, addr, addrlen, SQLITE_STATIC);
-	sqlite3_bind_int(stmt[3], 2, port);
+	sqlite3_bind_int64(stmt[3], 1, RuntimeData::TimeStamp::LastDataCollection());
+	sqlite3_bind_blob(stmt[3], 2, addr, addrlen, SQLITE_STATIC);
+	sqlite3_bind_int(stmt[3], 3, port);
 
 
 	while (sqlite3_step(stmt[3]) == SQLITE_ROW) {
@@ -208,7 +212,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 		db_close(db[j]);
 	}
 
-	Lock_DataCollector.unlock();
+//	Lock_DataCollector.unlock();
 
 	return 0;
 }

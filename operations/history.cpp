@@ -41,10 +41,13 @@ int amsd_operation_history(json_t *in_data, json_t *&out_data){
 		db_open(dbpath_summary, thisdb1);
 
 		sqlite3_prepare_v2(thisdb1, "SELECT Time, SUM(Elapsed) FROM summary "
-			"WHERE Time >= ((SELECT Max(Time) FROM summary) - 864000) GROUP BY Time", -1, &stmt1, NULL);
+			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt1, NULL);
 
 		sqlite3_prepare(thisdb, "SELECT Time, URL, SUM(DifficultyAccepted) FROM pool "
-			"WHERE Time >= ((SELECT Max(Time) FROM pool) - 864000) GROUP BY Time, URL", -1, &stmt, NULL);
+			"WHERE Time >= ?1 GROUP BY Time, URL", -1, &stmt, NULL);
+
+		sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
+		sqlite3_bind_int64(stmt1, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
 
 		while (sqlite3_step(stmt1) == SQLITE_ROW) {
 			thistime = sqlite3_column_int64(stmt1, 0);
@@ -105,7 +108,9 @@ int amsd_operation_history(json_t *in_data, json_t *&out_data){
 	} else if (type == "aliverate") {
 		db_open(dbpath_module_avalon7, thisdb);
 		sqlite3_prepare(thisdb, "SELECT Time, Count(DISTINCT(Addr)), Count(ModuleID) FROM module_avalon7 "
-			"WHERE Time >= ((SELECT Max(Time) FROM module_avalon7) - 864000) GROUP BY Time", -1, &stmt, NULL);
+			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt, NULL);
+
+		sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
 
 		j_timearray = json_array();
 		j_valuearray = json_array();
