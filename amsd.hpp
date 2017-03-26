@@ -59,6 +59,8 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
+#include <libReimu/IPEndPoint/IPEndPoint.hpp>
+
 #include "compatibility.hpp"
 
 #include "core/data_collector.hpp"
@@ -67,7 +69,7 @@
 
 #include "lib/rfc1342.hpp"
 #include "lib/rfc3339.hpp"
-#include "lib/cgminer_api.hpp"
+#include "lib/cgminer_api/cgminer_api.hpp"
 #include "lib/api_parser.hpp"
 #include "lib/avalon_errno.hpp"
 
@@ -78,6 +80,12 @@ using namespace std;
 
 #define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
 #define db_close(s)	sqlite3_close(s)
+
+
+#define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
+#define bd(n,d)		sqlite3_bind_double(stmt, n, d)
+#define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
+#define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
 #define NoLoginReq_Flag		asm volatile("nop; nop; nop; nop")
 
@@ -90,20 +98,6 @@ struct amsd_si_ctx {
     vector<uint8_t> *buf_out;
 };
 
-struct ReimuInetAddr {
-
-    uint64_t Addr = 0;
-    uint16_t Port = 0;
-
-    bool const operator==(const ReimuInetAddr &o) const{
-	    return Addr == o.Addr && Port == o.Port;
-    }
-
-    bool const operator<(const ReimuInetAddr &o) const{
-	    return Addr < o.Addr || (Addr == o.Addr && Port < o.Port);
-    }
-
-};
 
 enum GeneralStatus {
     Uninitialized = 0,

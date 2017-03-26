@@ -18,29 +18,23 @@
 
 #include "cgminer_api.hpp"
 
+
 int cgminer_api_request_raw(string ip, uint16_t port, string in_data, string &out_data){
+
+}
+
+int CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data) {
 	int fd, ret = 0;
 	bool IPv6 = false;
 	ssize_t rrc = 0;
 	uint8_t buf_in[512] = {0};
 	uint8_t remote_addr[sizeof(struct sockaddr_in6)];
 
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		return -2;
-
-	// TODO: IPv6
-	if (IPv6) {
-		((struct sockaddr_in6 *) remote_addr)->sin6_family = AF_INET6;
-		((struct sockaddr_in6 *) remote_addr)->sin6_port = htons(port);
-		inet_pton(AF_INET6, ip.c_str(), &((struct sockaddr_in6 *) remote_addr)->sin6_addr);
-	} else {
-		((struct sockaddr_in *) remote_addr)->sin_family = AF_INET;
-		((struct sockaddr_in *) remote_addr)->sin_port = htons(port);
-		inet_pton(AF_INET, ip.c_str(), &((struct sockaddr_in *) remote_addr)->sin_addr);
-	}
-
-	if (connect(fd, (sockaddr *)&remote_addr, IPv6 ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)) < 0)
+	try {
+		fd = ep.Connect();
+	} catch (Reimu::Exception e) {
 		goto badending;
+	}
 
 	in_data.push_back('\n');
 	send(fd, in_data.c_str(), in_data.length(), MSG_WAITALL);
@@ -63,10 +57,30 @@ int cgminer_api_request_raw(string ip, uint16_t port, string in_data, string &ou
 	}
 
 	ending:
-	close(fd);
+	ep.Close();
 	return ret;
 
 	badending:
 	ret = -1;
 	goto ending;
+}
+
+const char *CgMinerAPI::ToString(CgMinerAPI::APIType v) {
+	switch (v) {
+		case Summary:
+			return "summary";
+		case EStats:
+			return "estats";
+		case EDevs:
+			return "edevs";
+		case Pools:
+			return "pools";
+		default:
+			return "喵喵喵？？";
+	}
+}
+
+CgMinerAPI::CgMinerAPI() {
+
+
 }

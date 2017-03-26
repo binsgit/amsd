@@ -23,10 +23,6 @@ static const string api_cmd_estats = "{\"command\":\"estats\"}";
 static const string api_cmd_edevs = "{\"command\":\"edevs\"}";
 static const string api_cmd_pools = "{\"command\":\"pools\"}";
 
-#define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
-#define bd(n,d)		sqlite3_bind_double(stmt, n, d)
-#define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
-#define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
 
 
 shared_timed_mutex Lock_DataCollector;

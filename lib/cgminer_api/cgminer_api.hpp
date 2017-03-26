@@ -16,25 +16,32 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#ifndef AMSD_CGMINER_API_HPP
+#define AMSD_CGMINER_API_HPP
 
-int amsd_operation_rawapi(json_t *in_data, json_t *&out_data){
-	json_t *j_ip, *j_port, *j_req;
+#include "../../amsd.hpp"
+
+using namespace std;
+
+class CgMinerAPI {
+public:
+    //
+    enum APIType {
+	Summary = 1, EStats = 2, EDevs = 3, Pools = 4
+    };
+
+    // Static functions
+    static const char *ToString(CgMinerAPI::APIType v);
+    static int RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data);
 
 
-	j_ip = json_object_get(in_data, "ip");
-	j_port = json_object_get(in_data, "port");
-	j_req = json_object_get(in_data, "req");
+    // Constructor
+    CgMinerAPI();
 
-	if (!json_is_string(j_ip) || !json_is_integer(j_port) || !json_is_string(j_req))
-		return -1;
+};
 
-	string reqret;
 
-	int ret = CgMinerAPI::RequestRaw(string(json_string_value(j_ip)), (uint16_t)json_integer_value(j_port),
-	string(json_string_value(j_req)), reqret);
+extern int cgminer_api_request_raw(string ip, uint16_t port, string in_data, string &out_data);
 
-	json_object_set_new(out_data, "ret", json_string(reqret.c_str()));
 
-	return ret;
-}
+#endif //AMSD_CGMINER_API_HPP
