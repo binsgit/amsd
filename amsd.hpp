@@ -59,7 +59,9 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
+#include <libReimu/UniversalType/UniversalType.hpp>
 #include <libReimu/IPEndPoint/IPEndPoint.hpp>
+#include <libReimu/SQLAutomator/SQLAutomator.hpp>
 
 #include "compatibility.hpp"
 
@@ -77,6 +79,8 @@
 
 
 using namespace std;
+using Reimu::SQLAutomator;
+using Reimu::UniversalType;
 
 #define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
 #define db_close(s)	sqlite3_close(s)
@@ -121,6 +125,8 @@ extern time_t Timestamp_LastFinishedCollection;
 
 extern shared_timed_mutex Lock_DataCollector;
 extern shared_timed_mutex Lock_Config;
+
+extern Reimu::SQLAutomator db_controller;
 
 extern const char *dbpath_controller;
 extern const char *dbpath_mod_policy;

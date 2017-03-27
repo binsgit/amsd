@@ -29,6 +29,8 @@ const char *dbpath_module_avalon7 = NULL;
 const char *dbpath_issue = NULL;
 const char *dbpath_user = NULL;
 
+Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device, db_module_policy, db_module_avalon7;
+
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
 		"UNIQUE(Addr, Port) ON CONFLICT IGNORE)")},
@@ -176,10 +178,198 @@ map<string, pair<string, string>> db = {
 
 };
 
+namespace AMSD {
+    class Database : Reimu::SQLAutomator, Reimu::SQLAutomator::ColumnSpec {
+    public:
+	static int Init(){
+		db_controller.TableName = "controller";
+		db_controller.DatabaseURI = path_runtime + db_controller.TableName + ".db";
+		db_controller.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(Addr, Port) ON CONFLICT IGNORE");
+		db_controller.InsertColumns({{"Time", INTEGER},
+					     {"Addr", BLOB},
+					     {"Port", INTEGER},
+					     {"Type", INTEGER}});
+
+		db_user.TableName = "user";
+		db_user.DatabaseURI = path_runtime + db_user.TableName + ".db";
+		db_user.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(UserName) ON CONFLICT ABORT");
+		db_user.InsertColumns({{"UID", INTEGER|PRIMARY_KEY|AUTOINCREMENT|NOT_NULL},
+				       {"UserType", INTEGER},
+				       {"UserName", TEXT},
+				       {"NickName", TEXT},
+				       {"Password", BLOB},
+				       {"Token", TEXT},
+				       {"CTime", INTEGER},
+				       {"MTime", INTEGER},
+				       {"ATime", INTEGER},
+				       {"Avatar", BLOB},
+				       {"ExtData", BLOB}});
+
+
+		db_issue.TableName = "issue";
+		db_issue.DatabaseURI = path_runtime + db_issue.TableName + ".db";
+		db_issue.InsertColumns({{"Time", INTEGER},
+					{"Addr", BLOB},
+					{"Port", INTEGER},
+					{"Type", INTEGER},
+					{"Issue", BLOB}});
+
+		db_summary.TableName = "summary";
+		db_summary.DatabaseURI = path_runtime + db_summary.TableName + ".db";
+		db_summary.InsertColumns({{"Time", INTEGER},
+					  {"Addr", BLOB},
+					  {"Port", INTEGER},
+					  {"Elapsed", INTEGER},
+					  {"MHSav", REAL},
+					  {"MHS5s", REAL},
+					  {"MHS1m", REAL},
+					  {"MHS5m", REAL},
+					  {"MHS15m", REAL},
+					  {"FoundBlocks", INTEGER},
+					  {"Getworks", INTEGER},
+					  {"Accepted", INTEGER},
+					  {"Rejected", INTEGER},
+					  {"HardwareErrors", INTEGER},
+					  {"Utility", REAL},
+					  {"Discarded", INTEGER},
+					  {"Stale", INTEGER},
+					  {"GetFailures", INTEGER},
+					  {"LocalWork", INTEGER},
+					  {"RemoteFailures", INTEGER},
+					  {"NetworkBlocks", INTEGER},
+					  {"TotalMH", REAL},
+					  {"WorkUtility", REAL},
+					  {"DifficultyAccepted", REAL},
+					  {"DifficultyRejected", REAL},
+					  {"DifficultyStale", REAL},
+					  {"BestShare", INTEGER},
+					  {"DeviceHardware", REAL},
+					  {"DeviceRejected", REAL},
+					  {"PoolRejected", REAL},
+					  {"PoolStale", REAL},
+					  {"Lastgetwork", INTEGER}});
+
+
+		db_pool.TableName = "pool";
+		db_pool.DatabaseURI = path_runtime + db_pool.TableName + ".db";
+		db_pool.InsertColumns({{"Time", INTEGER},
+				       {"Addr", BLOB},
+				       {"Port", INTEGER},
+				       {"PoolID", INTEGER},
+				       {"URL", TEXT},
+				       {"Status", INTEGER},
+				       {"Priority", INTEGER},
+				       {"Quota", INTEGER},
+				       {"LongPoll", INTEGER},
+				       {"Getworks", INTEGER},
+				       {"Accepted", INTEGER},
+				       {"Rejected", INTEGER},
+				       {"Works", INTEGER},
+				       {"Discarded", INTEGER},
+				       {"Stale", INTEGER},
+				       {"GetFailures", INTEGER},
+				       {"RemoteFailures", INTEGER},
+				       {"User", TEXT},
+				       {"LastShareTime", INTEGER},
+				       {"Diff1Shares", INTEGER},
+				       {"ProxyType", TEXT},
+				       {"Proxy", TEXT},
+				       {"DifficultyAccepted", REAL},
+				       {"DifficultyRejected", REAL},
+				       {"DifficultyStale", REAL},
+				       {"LastShareDifficulty", REAL},
+				       {"WorkDifficulty", REAL},
+				       {"HasStratum", INTEGER},
+				       {"StratumActive", INTEGER},
+				       {"StratumURL", TEXT},
+				       {"StratumDifficulty", REAL},
+				       {"HasGBT", INTEGER},
+				       {"BestShare", INTEGER},
+				       {"PoolRejected", REAL},
+				       {"PoolStale", REAL},
+				       {"BadWork", INTEGER},
+				       {"CurrentBlockHeight", INTEGER},
+				       {"CurrentBlockVersion", INTEGER}});
+
+
+		db_device.TableName = "device";
+		db_device.DatabaseURI = path_runtime + db_device.TableName + ".db";
+		db_device.InsertColumns({{"Time", INTEGER},
+					 {"Addr", BLOB},
+					 {"Port", INTEGER},
+					 {"ASC", INTEGER},
+					 {"Name", TEXT},
+					 {"ID", INTEGER},
+					 {"Enabled", TEXT},
+					 {"Status", TEXT},
+					 {"Temperature", REAL},
+					 {"MHSav", REAL},
+					 {"MHS5s", REAL},
+					 {"MHS1m", REAL},
+					 {"MHS5m", REAL},
+					 {"MHS15m", REAL},
+					 {"Accepted", INTEGER},
+					 {"Rejected", INTEGER},
+					 {"HardwareErrors", INTEGER},
+					 {"Utility", REAL},
+					 {"LastSharePool", INTEGER},
+					 {"LastShareTime", INTEGER},
+					 {"TotalMH", REAL},
+					 {"Diff1Work", INTEGER},
+					 {"DifficultyAccepted", REAL},
+					 {"DifficultyRejected", REAL},
+					 {"LastShareDifficulty", REAL},
+					 {"NoDevice", INTEGER},
+					 {"LastValidWork", INTEGER},
+					 {"DeviceHardware", REAL},
+					 {"DeviceRejected", REAL},
+					 {"DeviceElapsed", INTEGER}});
+
+		db_module_avalon7.TableName = "module_avalon7";
+		db_module_avalon7.DatabaseURI = path_runtime + db_module_avalon7.TableName + ".db";
+		db_module_avalon7.InsertColumns({{"Time", INTEGER},
+					 {"Addr", BLOB},
+					 {"Port", INTEGER},
+					 {"DeviceID", INTEGER},
+						 {"ModuleID", INTEGER},
+					 {"Ver", TEXT},
+					 {"ID", INTEGER},
+					 {"Enabled", TEXT},
+					 {"Status", TEXT},
+					 {"Temperature", REAL},
+					 {"MHSav", REAL},
+					 {"MHS5s", REAL},
+					 {"MHS1m", REAL},
+					 {"MHS5m", REAL},
+					 {"MHS15m", REAL},
+					 {"Accepted", INTEGER},
+					 {"Rejected", INTEGER},
+					 {"HardwareErrors", INTEGER},
+					 {"Utility", REAL},
+					 {"LastSharePool", INTEGER},
+					 {"LastShareTime", INTEGER},
+					 {"TotalMH", REAL},
+					 {"Diff1Work", INTEGER},
+					 {"DifficultyAccepted", REAL},
+					 {"DifficultyRejected", REAL},
+					 {"LastShareDifficulty", REAL},
+					 {"NoDevice", INTEGER},
+					 {"LastValidWork", INTEGER},
+					 {"DeviceHardware", REAL},
+					 {"DeviceRejected", REAL},
+					 {"DeviceElapsed", INTEGER}});
+
+
+	}
+    };
+}
+
 int amsd_db_init(){
 	int fd;
 	bool inited;
 	string dbpath;
+
+	AMSD::Database::Init();
 
 	for (auto it = db.begin(); it != db.end(); ++it) {
 		sqlite3 *thisdb;

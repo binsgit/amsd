@@ -70,8 +70,9 @@ int amsd_operation_ascset(json_t *in_data, json_t *&out_data){
 
 	string reqret;
 
-	int ret = CgMinerAPI::RequestRaw(string(json_string_value(j_ip)), (uint16_t)json_integer_value(j_port),
-					  req, reqret);
+	Reimu::IPEndPoint ep(string(json_string_value(j_ip)), (uint16_t)json_integer_value(j_port));
+
+	int ret = CgMinerAPI::RequestRaw(ep, req, reqret);
 
 	json_object_set_new(out_data, "ret", json_string(reqret.c_str()));
 

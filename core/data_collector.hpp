@@ -150,20 +150,6 @@ public:
     uint8_t PVT_T[4][3][2]; // [HashBoardId][Low/Hi/Avg Temp][ChipId/Temp]
 };
 
-struct Avalon_Summary {
-
-};
-
-class Avalon_Controller {
-private:
-    shared_timed_mutex _APIBufLock;
-    vector<uint8_t> _APIBuf;
-public:
-    vector<Avalon_MM *> MM;
-
-    void APIBuf(struct evbuffer *input);
-
-};
 
 
 
