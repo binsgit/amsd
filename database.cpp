@@ -29,7 +29,8 @@ const char *dbpath_module_avalon7 = NULL;
 const char *dbpath_issue = NULL;
 const char *dbpath_user = NULL;
 
-Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device, db_module_policy, db_module_avalon7;
+Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device,
+	db_module_policy, db_module_avalon7;
 
 map<string, pair<string, string>> db = {
 	{"controller", spair("", "(Time UNSIGNED INT64, Addr BLOB, Port UNSIGNED INT16, Type INT, "
@@ -328,36 +329,117 @@ namespace AMSD {
 		db_module_avalon7.TableName = "module_avalon7";
 		db_module_avalon7.DatabaseURI = path_runtime + db_module_avalon7.TableName + ".db";
 		db_module_avalon7.InsertColumns({{"Time", INTEGER},
-					 {"Addr", BLOB},
-					 {"Port", INTEGER},
-					 {"DeviceID", INTEGER},
+						 {"Addr", BLOB},
+						 {"Port", INTEGER},
+						 {"DeviceID", INTEGER},
 						 {"ModuleID", INTEGER},
-					 {"Ver", TEXT},
-					 {"ID", INTEGER},
-					 {"Enabled", TEXT},
-					 {"Status", TEXT},
-					 {"Temperature", REAL},
-					 {"MHSav", REAL},
-					 {"MHS5s", REAL},
-					 {"MHS1m", REAL},
-					 {"MHS5m", REAL},
-					 {"MHS15m", REAL},
-					 {"Accepted", INTEGER},
-					 {"Rejected", INTEGER},
-					 {"HardwareErrors", INTEGER},
-					 {"Utility", REAL},
-					 {"LastSharePool", INTEGER},
-					 {"LastShareTime", INTEGER},
-					 {"TotalMH", REAL},
-					 {"Diff1Work", INTEGER},
-					 {"DifficultyAccepted", REAL},
-					 {"DifficultyRejected", REAL},
-					 {"LastShareDifficulty", REAL},
-					 {"NoDevice", INTEGER},
-					 {"LastValidWork", INTEGER},
-					 {"DeviceHardware", REAL},
-					 {"DeviceRejected", REAL},
-					 {"DeviceElapsed", INTEGER}});
+						 {"Ver", TEXT},
+						 {"DNA", BLOB},
+						 {"Elapsed", INTEGER}});
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"MW_"+to_string(j), INTEGER});
+		}
+
+		db_module_avalon7.InsertColumn({"LW", INTEGER});
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"MH_"+to_string(j), INTEGER});
+		}
+
+		db_module_avalon7.InsertColumns({{"HW", INTEGER},
+						 {"DH", REAL},
+						 {"Temp", INTEGER},
+						 {"TMax", INTEGER},
+						 {"Fan", INTEGER},
+						 {"FanR", INTEGER}});
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"Vi_"+to_string(j), INTEGER});
+		}
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"Vo_"+to_string(j), INTEGER});
+		}
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<6; k++) {
+				db_module_avalon7.InsertColumn({"PLL_"+to_string(j)+"_"+to_string(k), INTEGER});
+			}
+		}
+
+		db_module_avalon7.InsertColumns({{"GHSmm", REAL},
+						 {"WU", REAL},
+						 {"Freq", REAL},
+						 {"PG", INTEGER},
+						 {"LED", INTEGER}});
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<18; k++) {
+				db_module_avalon7.InsertColumn({"MW_"+to_string(j)+"_"+to_string(k), INTEGER});
+			}
+		}
+
+		db_module_avalon7.InsertColumn({"TA", INTEGER});
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"ECHU_"+to_string(j), INTEGER});
+		}
+
+		db_module_avalon7.InsertColumn({"ECMM", INTEGER});
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<6; k++) {
+				db_module_avalon7.InsertColumn({"SF_"+to_string(j)+"_"+to_string(k), INTEGER});
+			}
+		}
+
+		for (int j=0; j<2; j++) {
+			db_module_avalon7.InsertColumn({"PMUV_"+to_string(j), INTEGER});
+		}
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<18; k++) {
+				db_module_avalon7.InsertColumn({"ERATIO_"+to_string(j)+"_"+to_string(k), REAL});
+			}
+		}
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<5; k++) {
+				for (int l=0; l<18; l++) { // 可以这很强势
+					db_module_avalon7.InsertColumn({"C_"+to_string(j)+"_"+to_string(k)+"_"+to_string(l), INTEGER});
+				}
+			}
+		}
+
+		for (int j=0; j<4; j++) {
+			for (int k=0; k<18; k++) {
+				db_module_avalon7.InsertColumn({"GHSmm_"+to_string(j)+"_"+to_string(k), REAL});
+			}
+		}
+
+		db_module_avalon7.InsertColumn({"FM", INTEGER});
+
+		for (int j=0; j<4; j++) {
+			db_module_avalon7.InsertColumn({"CRC_"+to_string(j), INTEGER});
+		}
+
+		for (int j=0; j<4; j++) {
+			for (auto const &k : {"L", "H", "A"}) {
+				for (auto const &l : {"C", "T"}) {
+					db_module_avalon7.InsertColumn({"PVT_"+to_string(j)+"_"+k+"_"+l, INTEGER});
+				}
+			}
+		}
+
+
+
+		// Prepend pragmas for all dbs
+
+		for (auto *thisdb : {&db_controller, &db_user, &db_issue, &db_summary, &db_pool, &db_device,
+				     &db_module_policy, &db_module_avalon7}) {
+			thisdb->Statement_Ext(CREATE_TABLE, "PRAGMA journal_mode=WAL; PRAGMA page_size=4096; ", NULL);
+		}
 
 
 	}
