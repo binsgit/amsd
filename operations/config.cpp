@@ -18,7 +18,7 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_config(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::config(json_t *in_data, json_t *&out_data) {
 	json_t *j_op = json_object_get(in_data, "op");
 	json_t *j_key, *j_subkey, *j_value;
 	string key, subkey, value;

@@ -18,7 +18,7 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_history(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 	NoLoginReq_Flag;
 	json_t *j_type = json_object_get(in_data, "type");
 	json_t *j_timearray, *j_valuearray, *j_value2array;
@@ -37,8 +37,8 @@ int amsd_operation_history(json_t *in_data, json_t *&out_data){
 		map<string, map<int64_t, double>> sorter1;
 		int64_t thistime, thiselapsed;
 
-		db_open(dbpath_pool, thisdb);
-		db_open(dbpath_summary, thisdb1);
+		db_open(db_pool.DatabaseURI.c_str(), thisdb);
+		db_open(db_summary.DatabaseURI.c_str(), thisdb1);
 
 		sqlite3_prepare_v2(thisdb1, "SELECT Time, SUM(Elapsed) FROM summary "
 			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt1, NULL);
@@ -106,7 +106,7 @@ int amsd_operation_history(json_t *in_data, json_t *&out_data){
 		json_object_set_new(out_data, "mdzz", j_value2array);
 
 	} else if (type == "aliverate") {
-		db_open(dbpath_module_avalon7, thisdb);
+		db_open(db_module_avalon7.DatabaseURI.c_str(), thisdb);
 		sqlite3_prepare(thisdb, "SELECT Time, Count(DISTINCT(Addr)), Count(ModuleID) FROM module_avalon7 "
 			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt, NULL);
 

@@ -19,9 +19,7 @@
 #include "../amsd.hpp"
 
 
-int amsd_operation_status(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
-
+int AMSD::Operations::status(json_t *in_data, json_t *&out_data){
 	json_t *j_status = json_object();
 	json_t *j_ip, *j_port;
 	json_t *j_summary, *j_pool, *j_device, *j_module;
@@ -62,7 +60,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 
 //	Lock_DataCollector.lock();
 
-	db_open(dbpath_summary, db[0]);
+	db_open(db_summary.DatabaseURI.c_str(), db[0]);
 
 	sqlite3_prepare(db[0], "SELECT Elapsed, MHSav, Accepted, Rejected, NetworkBlocks, BestShare FROM summary "
 		"WHERE Time = ?1 AND Addr = ?2 AND Port = ?3", -1, &stmt[0], NULL);
@@ -84,7 +82,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 
 	j_pools = json_array();
 
-	db_open(dbpath_pool, db[1]);
+	db_open(db_pool.DatabaseURI.c_str(), db[1]);
 
 	sqlite3_prepare(db[1], "SELECT PoolID, URL, StratumActive, User, Status, GetWorks, Accepted, Rejected, Stale, "
 		"LastShareTime, LastShareDifficulty FROM pool WHERE Time = ?1 "
@@ -118,7 +116,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 	j_devices = json_array();
 	j_modules = json_array();
 
-	db_open(dbpath_device, db[2]);
+	db_open(db_device.DatabaseURI.c_str(), db[2]);
 
 	sqlite3_prepare(db[2], "SELECT ASC, Name, ID, Enabled, Status, Temperature, MHSav, MHS5s, MHS1m, MHS5m, MHS15m, "
 		"LastValidWork FROM device WHERE Time = ?1 "
@@ -128,7 +126,7 @@ int amsd_operation_status(json_t *in_data, json_t *&out_data){
 	sqlite3_bind_blob(stmt[2], 2, addr, addrlen, SQLITE_STATIC);
 	sqlite3_bind_int(stmt[2], 3, port);
 
-	db_open(dbpath_module_avalon7, db[3]);
+	db_open(db_module_avalon7.DatabaseURI.c_str(), db[3]);
 
 	sqlite3_prepare(db[3], "SELECT DeviceID, ModuleID, LED, Elapsed, Ver, DNA, LW, DH, GHSmm, WU, Temp, TMax, Fan, "
 		"FanR, PG, ECHU_0, ECHU_1, ECHU_2, ECHU_3, ECMM FROM module_avalon7 WHERE "

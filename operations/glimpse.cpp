@@ -18,9 +18,7 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_glimpse(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
-
+int AMSD::Operations::glimpse(json_t *in_data, json_t *&out_data){
 	Report::Report rpt("", 0);
 
 	json_object_set_new(out_data, "mods", json_integer((long)rpt.Farm0.Modules));

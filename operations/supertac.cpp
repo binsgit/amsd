@@ -50,7 +50,7 @@ static int save_scripts(){
 	return ret;
 }
 
-int amsd_operation_supertac(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::supertac(json_t *in_data, json_t *&out_data){
 
 	if (!load_scripts())
 		srtac_scripts = json_array();
@@ -299,7 +299,6 @@ int amsd_operation_supertac(json_t *in_data, json_t *&out_data){
 	}
 
 }
-
 
 void SuperRTACSession::ExecInstance(SuperRTACSession *m) {
 

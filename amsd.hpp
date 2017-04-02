@@ -65,6 +65,9 @@
 
 #include "compatibility.hpp"
 
+#include "runtime/runtime.hpp"
+#include "operations/operations.hpp"
+
 #include "core/data_collector.hpp"
 #include "core/report.hpp"
 #include "core/issue.hpp"
@@ -79,8 +82,7 @@
 
 
 using namespace std;
-using Reimu::SQLAutomator;
-using Reimu::UniversalType;
+using namespace AMSD;
 
 #define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
 #define db_close(s)	sqlite3_close(s)
@@ -112,7 +114,6 @@ enum GeneralStatus {
 };
 
 class User;
-class RuntimeData;
 class MMUpgrade;
 class SSHConnection;
 class SuperRTACSession;
@@ -126,16 +127,7 @@ extern time_t Timestamp_LastFinishedCollection;
 extern shared_timed_mutex Lock_DataCollector;
 extern shared_timed_mutex Lock_Config;
 
-extern Reimu::SQLAutomator db_controller;
 
-extern const char *dbpath_controller;
-extern const char *dbpath_mod_policy;
-extern const char *dbpath_summary;
-extern const char *dbpath_pool;
-extern const char *dbpath_device;
-extern const char *dbpath_module_avalon7;
-extern const char *dbpath_issue;
-extern const char *dbpath_user;
 
 extern string amsd_local_superuser_token;
 
@@ -176,45 +168,13 @@ extern int amsd_user_auth(string token, User *userinfo);
 // Request
 extern int amsd_request_parse(char *inputstr, string &outputstr);
 
-// Operations
-extern std::pair<void *, bool> amsd_operation_get(std::string name);
-extern bool amsd_operation_register(string name, int (*pfunc)(json_t*, json_t*&), bool auth_required=1);
-
-extern int amsd_operation_glimpse(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_history(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_fwver(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_mmupgrade(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_supertac(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_controller(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_issues(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_mailreport(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_config(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_status(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_farmap(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_ascset(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_rawapi(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_user(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_login(json_t *in_data, json_t *&out_data);
-extern int amsd_operation_version(json_t *in_data, json_t *&out_data);
 
 class User {
     string UserName;
     string NickName;
 };
 
-class RuntimeData {
-public:
-    static int Init();
 
-    class TimeStamp {
-    public:
-	static time_t CurrentDataCollection();
-	static void CurrentDataCollection(time_t t);
-
-	static time_t LastDataCollection();
-	static void LastDataCollection(time_t t);
-    };
-};
 
 class MMUpgrade {
 private:

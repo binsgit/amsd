@@ -18,7 +18,7 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_rawapi(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::rawapi(json_t *in_data, json_t *&out_data){
 	json_t *j_ip, *j_port, *j_req;
 
 

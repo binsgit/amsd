@@ -28,7 +28,7 @@ public:
     double TempSum = 0, TMaxSum = 0;
 };
 
-int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::farmap(json_t *in_data, json_t *&out_data){
 	NoLoginReq_Flag;
 
 	sqlite3 *db[3];
@@ -45,7 +45,7 @@ int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
 	map<string, mController> ctls;
 	mController *ctl;
 
-	db_open(dbpath_module_avalon7, db[0]);
+	db_open(db_module_avalon7.DatabaseURI.c_str(), db[0]);
 	sqlite3_prepare(db[0], "SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE "
 		"Time = ?1", -1, &stmt[0], NULL);
 
@@ -68,7 +68,7 @@ int amsd_operation_farmap(json_t *in_data, json_t *&out_data){
 		ctl->Mods++;
 	}
 
-	db_open(dbpath_module_avalon7, db[1]);
+	db_open(db_issue.DatabaseURI.c_str(), db[1]);
 	sqlite3_prepare(db[1], "SELECT Addr, Port FROM issue WHERE Time = ?1 AND "
 		"Type >= 0x10 AND Type < 0x20", -1, &stmt[1], NULL);
 

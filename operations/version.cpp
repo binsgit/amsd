@@ -19,7 +19,7 @@
 #include "../amsd.hpp"
 
 
-int amsd_operation_version(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::version(json_t *in_data, json_t *&out_data) {
 	json_t *j_version = json_object();
 	json_t *j_amsd_version = json_real(AMSD_VERSION);
 
@@ -28,3 +28,4 @@ int amsd_operation_version(json_t *in_data, json_t *&out_data){
 
 	return 0;
 }
+

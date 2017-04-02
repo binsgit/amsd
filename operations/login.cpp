@@ -19,9 +19,7 @@
 #include "../amsd.hpp"
 
 
-int amsd_operation_login(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
-
+int AMSD::Operations::login(json_t *in_data, json_t *&out_data){
 	json_t *j_user = json_object_get(in_data, "username");
 	json_t *j_passwd = json_object_get(in_data, "passwd");
 

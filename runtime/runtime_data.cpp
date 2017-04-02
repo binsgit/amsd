@@ -16,14 +16,14 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amsd.hpp"
+#include "../amsd.hpp"
 
 static uint8_t *RuntimeData_Memory = NULL;
 
 static uint8_t *RDM_OFFSET_TimeStamp_CurrentDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_LastDataCollection;
 
-int RuntimeData::Init() {
+int AMSD::RuntimeData::Init() {
 	string shm_path = path_runtime + "RuntimeData";
 	RuntimeData_Memory = reimu_shm_open(shm_path, 32768);
 	if (!RuntimeData_Memory)
@@ -35,23 +35,23 @@ int RuntimeData::Init() {
 	return 0;
 }
 
-time_t RuntimeData::TimeStamp::CurrentDataCollection() {
+time_t AMSD::RuntimeData::TimeStamp::CurrentDataCollection() {
 	time_t *pRD = (time_t *)RDM_OFFSET_TimeStamp_CurrentDataCollection;
 	return *pRD;
 }
 
-void RuntimeData::TimeStamp::CurrentDataCollection(time_t t) {
+void AMSD::RuntimeData::TimeStamp::CurrentDataCollection(time_t t) {
 	time_t *pRD = (time_t *)RDM_OFFSET_TimeStamp_CurrentDataCollection;
 	*pRD = t;
 }
 
-time_t RuntimeData::TimeStamp::LastDataCollection() {
+time_t AMSD::RuntimeData::TimeStamp::LastDataCollection() {
 	time_t *pRD = (time_t *)RDM_OFFSET_TimeStamp_LastDataCollection;
 	return *pRD;
 }
 
 
-void RuntimeData::TimeStamp::LastDataCollection(time_t t) {
+void AMSD::RuntimeData::TimeStamp::LastDataCollection(time_t t) {
 	time_t *pRD = (time_t *)RDM_OFFSET_TimeStamp_LastDataCollection;
 	*pRD = t;
 }

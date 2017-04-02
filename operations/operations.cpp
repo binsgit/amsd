@@ -16,11 +16,11 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amsd.hpp"
+#include "../amsd.hpp"
 
 std::map<std::string, std::pair<void *, bool>> Operations;
 
-std::pair<void *, bool> amsd_operation_get(std::string name) {
+std::pair<void *, bool> AMSD::Operations::Get(std::string name) {
 	std::map<std::string, std::pair<void *, bool>>::const_iterator target = Operations.find(name);
 
 	if (target == Operations.end())
@@ -29,7 +29,7 @@ std::pair<void *, bool> amsd_operation_get(std::string name) {
 		return target->second;
 }
 
-bool amsd_operation_register(std::string name, int (*pfunc)(json_t*, json_t*&), bool auth_required) {
+bool AMSD::Operations::Register(std::string name, int (*pfunc)(json_t*, json_t*&), bool auth_required) {
 	std::pair<void *, bool> thisopt = std::pair<void *, bool>((void *)pfunc, auth_required);
 
 	if (Operations.insert(std::pair<std::string, std::pair<void *, bool>>(name, thisopt)).second) {
@@ -40,4 +40,24 @@ bool amsd_operation_register(std::string name, int (*pfunc)(json_t*, json_t*&), 
 			name.c_str(), pfunc);
 		return false;
 	}
+}
+
+int AMSD::Operations::Init() {
+	Register("glimpse", &glimpse, 0);
+	Register("farmap", &farmap, 0);
+	Register("user", &user);
+	Register("history", &history, 0);
+	Register("status", &status, 0);
+	Register("issues", &issues, 0);
+	Register("fwver", &fwver, 0);
+	Register("ascset", &ascset);
+	Register("supertac", &supertac);
+	Register("controller", &controller);
+	Register("mailreport", &mailreport);
+	Register("config", &config);
+	Register("rawapi", &rawapi);
+	Register("login", &login, 0);
+	Register("version", &version, 0);
+	
+	return 0;
 }

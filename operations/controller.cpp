@@ -19,7 +19,7 @@
 #include <netinet/in.h>
 #include "../amsd.hpp"
 
-int amsd_operation_controller(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 	json_t *j_op = json_object_get(in_data, "op");
 	string op;
 	size_t index = 0;

@@ -18,7 +18,7 @@
 
 #include "../amsd.hpp"
 
-int amsd_operation_fwver(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::fwver(json_t *in_data, json_t *&out_data){
 	json_t *j_ip = json_object_get(in_data, "ip");
 	json_t *j_fwver;
 	string fwver;

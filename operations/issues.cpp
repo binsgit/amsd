@@ -19,9 +19,7 @@
 #include "../amsd.hpp"
 
 
-int amsd_operation_issues(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
-
+int AMSD::Operations::issues(json_t *in_data, json_t *&out_data){
 	sqlite3 *thismoduledb, *thisissuedb;
 	sqlite3_stmt *stmt;
 	json_t *j_issues, *j_issue, *j_avalonerr;
@@ -45,7 +43,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 
 //	Lock_DataCollector.lock();
 
-	db_open(dbpath_module_avalon7, thismoduledb);
+	db_open(db_module_avalon7.DatabaseURI.c_str(), thismoduledb);
 
 	sqlite3_prepare(thismoduledb, "SELECT Addr, Port, DeviceID, ModuleID, CRC_0, CRC_1, CRC_2, CRC_3, "
 		"ECHU_0, ECHU_1, ECHU_2, ECHU_3, Ver, WU, DH, DNA "
@@ -108,7 +106,7 @@ int amsd_operation_issues(json_t *in_data, json_t *&out_data){
 	db_close(thismoduledb);
 
 
-	db_open(dbpath_issue, thisissuedb);
+	db_open(db_issue.DatabaseURI.c_str(), thisissuedb);
 
 	sqlite3_prepare(thisissuedb, "SELECT Addr, Port, Type FROM issue WHERE Time = ?1 "
 		"AND Type >= 0x10 AND Type < 0x20", -1, &stmt, NULL);
