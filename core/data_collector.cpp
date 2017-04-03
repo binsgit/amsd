@@ -34,61 +34,6 @@ sqlite3_stmt *stmt_log_timeout;
 
 
 static void event_cb(struct bufferevent *bev, short events, void *ptr){
-	CgMinerAPIProcessor *apibuf = (CgMinerAPIProcessor *)ptr;
-
-	if (events & BEV_EVENT_CONNECTED) {
-		fprintf(stderr,"amsd: datacollector: %s (%p) connected\n", apibuf->Remote_AddrText.c_str(), bev);
-		const string *cmdstr = &api_cmd_summary;
-
-		if (!apibuf->CmdWritten) {
-			switch (apibuf->APIType) {
-				case CgMinerAPIProcessor::Summary:
-					break;
-				case CgMinerAPIProcessor::EStats:
-					cmdstr = &api_cmd_estats;
-					break;
-				case CgMinerAPIProcessor::EDevs:
-					cmdstr = &api_cmd_edevs;
-					break;
-				case CgMinerAPIProcessor::Pools:
-					cmdstr = &api_cmd_pools;
-					break;
-			}
-
-			bufferevent_write(bev, cmdstr->c_str(), cmdstr->length());
-			bufferevent_write(bev, "\n", 1);
-			apibuf->CmdWritten = 1;
-		}
-
-	} else {
-		if (events & BEV_EVENT_EOF) {
-			fprintf(stderr, "amsd: datacollector: %s (%p) connection done (%d), %zu bytes received\n",
-				apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
-			apibuf->NetIOBuf.push_back(0);
-			apibuf->Process();
-		} else {
-			sqlite3_bind_int64(stmt_log_timeout, 1, apibuf->StartTime);
-			sqlite3_bind_blob64(stmt_log_timeout, 2, apibuf->Remote_Addr, apibuf->Remote_AddrLen, SQLITE_STATIC);
-			sqlite3_bind_int(stmt_log_timeout, 3, apibuf->Remote_Port);
-
-			if (events & BEV_EVENT_ERROR) {
-				sqlite3_bind_int(stmt_log_timeout, 4, Issue::Issue::IssueType::ConnectionFailure);
-				fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
-					apibuf->Remote_AddrText.c_str(), bev, events, apibuf->NetIOBuf.size());
-			} else if (events & BEV_EVENT_TIMEOUT) {
-				sqlite3_bind_int(stmt_log_timeout, 4, Issue::Issue::IssueType::ConnectionTimeout);
-				fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
-					apibuf->Remote_AddrText.c_str(), bev, amsd_datacollection_conntimeout.tv_sec,
-					amsd_datacollection_conntimeout.tv_usec, events, apibuf->NetIOBuf.size());
-			}
-
-			sqlite3_step(stmt_log_timeout);
-			sqlite3_reset(stmt_log_timeout);
-		}
-
-		bufferevent_free(bev);
-		delete apibuf;
-	}
 
 }
 

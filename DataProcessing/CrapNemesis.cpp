@@ -15,12 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "dataprocessing.hpp"
+
+#include "DataProcessing.hpp"
 
 #define ITEM_STATE_KEY		0x00
 #define ITEM_STATE_VALUE	0x10
 
-unordered_map<string, vector<string>> DataProcessing::Collector::CgMinerAPI::CrapNemesis(char *crap) {
+unordered_map<string, vector<string>> DataProcessing::CgMinerAPI::CrapNemesis(char *crap) {
 
 	// Special function designed to get rid of that shitty API output.
 	// We are not using regex because it is too SLOW.

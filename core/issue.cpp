@@ -24,31 +24,7 @@ Issue::Avalon_Error::Avalon_Error() {
 
 
 Issue::Avalon_Error::Avalon_Error(vector<uint8_t> issue_desc) {
-	/*
-	 * issue_desc for AvalonError
-	 * +---------+---------+---------+---------+
-	 * | 2 bytes | 2 bytes | 8 bytes | 8 bytes |
-	 * +---------+---------+---------+---------+
-	 * |   AUC   |  Module |   DNA   | ErrCode |
-	 * +---------+---------+---------+---------+
-	 *
-	 */
 
-	if (issue_desc.size() != 20) {
-		return;
-	}
-
-	uint8_t *p = &issue_desc[0];
-
-	memcpy(&AUC, p, 2);
-	memcpy(&Module, p+2, 2);
-	memcpy(&DNA, p+4, 8);
-	memcpy(&ErrNum, p+12, 8);
-
-	AUC = le16toh(AUC);
-	Module = le16toh(Module);
-	DNA = le64toh(DNA);
-	ErrNum = le64toh(ErrNum);
 
 }
 

@@ -16,10 +16,10 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dataprocessing.hpp"
+#include "DataProcessing.hpp"
 
 
-int DataProcessing::Collector::CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data) {
+int DataProcessing::CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data) {
 	int fd, ret = 0;
 	bool IPv6 = false;
 	ssize_t rrc = 0;
@@ -61,7 +61,7 @@ int DataProcessing::Collector::CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, stri
 	goto ending;
 }
 
-const char *DataProcessing::Collector::CgMinerAPI::ToString(CgMinerAPI::APIType v) {
+const char *DataProcessing::CgMinerAPI::ToString(CgMinerAPI::APIType v) {
 	switch (v) {
 		case Summary:
 			return "summary";
@@ -76,12 +76,12 @@ const char *DataProcessing::Collector::CgMinerAPI::ToString(CgMinerAPI::APIType 
 	}
 }
 
-DataProcessing::Collector::CgMinerAPI::CgMinerAPI() {
+DataProcessing::CgMinerAPI::CgMinerAPI() {
 
 
 }
 
-DataProcessing::Collector::CgMinerAPI::CgMinerAPI(time_t timestamp, DataProcessing::Collector::CgMinerAPI::APIType t,
+DataProcessing::CgMinerAPI::CgMinerAPI(time_t timestamp, DataProcessing::CgMinerAPI::APIType t,
 						  Reimu::SQLAutomator::SQLite3 db, Reimu::IPEndPoint ep) {
 	TimeStamp = timestamp;
 	Type = t;
@@ -89,7 +89,7 @@ DataProcessing::Collector::CgMinerAPI::CgMinerAPI(time_t timestamp, DataProcessi
 	RemoteEP = ep;
 }
 
-void DataProcessing::Collector::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<string> json_keys) {
+void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<string> json_keys) {
 	json_t *j_apidata_array;
 	json_t *j_apidata;
 	size_t j;
@@ -153,7 +153,7 @@ void DataProcessing::Collector::CgMinerAPI::ParseAPIData(const char *api_obj_nam
 }
 
 
-void DataProcessing::Collector::CgMinerAPI::Process() {
+void DataProcessing::CgMinerAPI::Process() {
 	fprintf(stderr, "amsd: CgMinerAPI: processing %s for %s\n", ToString(Type), RemoteEP.ToString());
 
 	json_error_t j_err;
@@ -167,13 +167,26 @@ void DataProcessing::Collector::CgMinerAPI::Process() {
 		throw e;
 	}
 
-
+	switch (Type) {
+		case Summary:
+			ParseAPIData("SUMMARY", JsonKeys_Summary);
+			break;
+		case EStats:
+			ParseCrap(); // The API output is NOT easy to parse nor easy to read!!!
+			break;
+		case EDevs:
+			ParseAPIData("DEVS", JsonKeys_Device);
+			break;
+		case Pools:
+			ParseAPIData("POOLS", JsonKeys_Pool);
+			break;
+	}
 
 
 
 }
 
-void DataProcessing::Collector::CgMinerAPI::ParseCrap() {
+void DataProcessing::CgMinerAPI::ParseCrap() {
 
 	json_t *j_apidata_array = json_object_get(JsonAPIData, "STATS");
 
@@ -241,3 +254,21 @@ void DataProcessing::Collector::CgMinerAPI::ParseCrap() {
 
 }
 
+const string DataProcessing::CgMinerAPI::QueryString(DataProcessing::CgMinerAPI::APIType v) {
+	switch (v) {
+		case Summary:
+			return QueryString_Summary;
+		case EStats:
+			return QueryString_EStats;
+		case EDevs:
+			return QueryString_EDevs;
+		case Pools:
+			return QueryString_Pools;
+		default:
+			return "喵喵喵？？";
+	}
+}
+
+const string DataProcessing::CgMinerAPI::QueryString() {
+	return QueryString(Type);
+}

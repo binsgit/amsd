@@ -45,7 +45,7 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 
 			j_controllers = json_array();
 
-			thisdb.Prepare(db_controller.Statement(SQLAutomator::StatementType::SELECT_FROM));
+			thisdb.Prepare(db_controller.Statement(SELECT_FROM));
 
 			while ( (rc = thisdb.Step()) == SQLITE_ROW) {
 				j_controller = json_object();
@@ -87,8 +87,8 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 					if (j_con_ip && j_con_port)
 						if (json_is_string(j_con_ip) && json_is_integer(j_con_port)) {
 
-							thisdb.Bind(1, UniversalType(timenow));
-							thisdb.Bind(3, UniversalType((int64_t)json_integer_value(j_con_port)));
+							thisdb.Bind(1, {timenow});
+							thisdb.Bind(3, {(int64_t)json_integer_value(j_con_port)});
 
 
 							const char *ipsbuf = json_string_value(j_con_ip);
@@ -96,11 +96,11 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 							if (strchr(ipsbuf, ':')) {
 								in6_addr thisaddr;
 								inet_pton(AF_INET6, ipsbuf, &thisaddr);
-								thisdb.Bind(2, UniversalType(thisaddr.__in6_u.__u6_addr8, 16));
+								thisdb.Bind(2, {thisaddr.__in6_u.__u6_addr8, 16});
 							} else {
 								in_addr thisaddr;
 								inet_pton(AF_INET, ipsbuf, &thisaddr);
-								thisdb.Bind(2, UniversalType(&thisaddr.s_addr, 4));
+								thisdb.Bind(2, {&thisaddr.s_addr, 4});
 							}
 
 							thisdb.Step();
@@ -132,14 +132,14 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 							if (strchr(ipsbuf, ':')) {
 								in6_addr thisaddr;
 								inet_pton(AF_INET6, ipsbuf, &thisaddr);
-								thisdb.Bind(1, UniversalType(thisaddr.__in6_u.__u6_addr8, 16));
+								thisdb.Bind(1, {thisaddr.__in6_u.__u6_addr8, 16});
 							} else {
 								in_addr thisaddr;
 								inet_pton(AF_INET, ipsbuf, &thisaddr);
-								thisdb.Bind(1, UniversalType(&thisaddr.s_addr, 4));
+								thisdb.Bind(1, {&thisaddr.s_addr, 4});
 							}
 
-							thisdb.Bind(2, UniversalType((int64_t)json_integer_value(j_con_port)));
+							thisdb.Bind(2, {(int64_t)json_integer_value(j_con_port)});
 
 							thisdb.Step();
 							thisdb.Reset();
