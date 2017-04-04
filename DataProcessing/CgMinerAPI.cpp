@@ -18,6 +18,8 @@
 
 #include "DataProcessing.hpp"
 
+using Reimu::SQLAutomator;
+using Reimu::SQLAutomator::SQLite3;
 
 int DataProcessing::CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data) {
 	int fd, ret = 0;
@@ -82,10 +84,12 @@ DataProcessing::CgMinerAPI::CgMinerAPI() {
 }
 
 DataProcessing::CgMinerAPI::CgMinerAPI(time_t timestamp, DataProcessing::CgMinerAPI::APIType t,
-						  Reimu::SQLAutomator::SQLite3 db, Reimu::IPEndPoint ep) {
+				       Reimu::SQLAutomator::SQLite3 *db, Reimu::SQLAutomator::SQLite3 *issuedb,
+				       Reimu::IPEndPoint ep) {
 	TimeStamp = timestamp;
 	Type = t;
 	DestDB = db;
+	IssueDB = issuedb;
 	RemoteEP = ep;
 }
 
@@ -113,9 +117,9 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 				goto end;
 			}
 
-			DestDB.Bind(1, TimeStamp);
-			DestDB.Bind(2, {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16});
-			DestDB.Bind(3, RemoteEP.Port);
+			DestDB->Bind(1, TimeStamp);
+			DestDB->Bind(2, {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16});
+			DestDB->Bind(3, RemoteEP.Port);
 
 			narg = 4;
 
@@ -128,19 +132,19 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 				}
 
 				if (json_is_integer(buf0))
-					DestDB.Bind(narg, (uint64_t)json_integer_value(buf0));
+					DestDB->Bind(narg, (uint64_t)json_integer_value(buf0));
 				else if (json_is_string(buf0))
-					DestDB.Bind(narg, string(json_string_value(buf0)));
+					DestDB->Bind(narg, string(json_string_value(buf0)));
 				else if (json_is_real(buf0))
-					DestDB.Bind(narg, json_real_value(buf0));
+					DestDB->Bind(narg, json_real_value(buf0));
 				else if (json_is_boolean(buf0))
-					DestDB.Bind(narg, json_boolean_value(buf0));
+					DestDB->Bind(narg, json_boolean_value(buf0));
 
 				narg++;
 			}
 
-			DestDB.Step();
-			DestDB.Reset();
+			DestDB->Step();
+			DestDB->Reset();
 
 		}
 
@@ -243,9 +247,9 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			}
 
 
-			DestDB.PPB(INSERT_INTO, "module_avalon7", sequencedCrap);
-			cout << DestDB.Statement << endl;
-			DestDB.Exec();
+			DestDB->PPB(SQLAutomator::INSERT_INTO, "module_avalon7", sequencedCrap);
+			cout << DestDB->Statement << endl;
+			DestDB->Exec();
 
 		}
 

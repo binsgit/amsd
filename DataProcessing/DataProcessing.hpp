@@ -7,12 +7,30 @@
 
 #include "../amsd.hpp"
 
+using namespace Reimu;
+using Reimu::SQLAutomator;
+using Reimu::SQLAutomator::SQLite3;
+
 namespace AMSD {
     class DataProcessing {
     public:
 	class Collector {
 	public:
 
+	    struct ConnectionContext {
+		Collector *thisCollector;
+		CgMinerAPI *thisAPIProcessor;
+	    };
+
+	    SQLite3 DBC_Controllers;
+	    SQLite3 DBC_Issue;
+
+	    vector<SQLite3> DBConnections;
+
+	    time_t TimeStamp;
+	    struct timeval TimeOut = {15, 0};
+
+	    Collector();
 
 
 	private:
@@ -24,7 +42,7 @@ namespace AMSD {
 
 	};
 
-	class CgMinerAPI : Reimu::SQLAutomator, Reimu::SQLAutomator::SQLite3 {
+	class CgMinerAPI {
 
 	public:
 	    static const vector<string> JsonKeys_Summary = {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
@@ -63,7 +81,8 @@ namespace AMSD {
 	    time_t TimeStamp = 0;
 	    APIType Type;
 	    Reimu::IPEndPoint RemoteEP;
-	    Reimu::SQLAutomator::SQLite3 DestDB;
+	    Reimu::SQLAutomator::SQLite3 *DestDB = NULL;
+	    Reimu::SQLAutomator::SQLite3 *IssueDB = NULL;
 	    int64_t UserData = 0;
 
 	    vector<uint8_t> RawAPIData;
@@ -81,7 +100,7 @@ namespace AMSD {
 
 	    // Constructor
 	    CgMinerAPI();
-	    CgMinerAPI(time_t timestamp, APIType t, Reimu::SQLAutomator::SQLite3 db, Reimu::IPEndPoint ep);
+	    CgMinerAPI(time_t timestamp, APIType t, Reimu::SQLAutomator::SQLite3 *db, Reimu::SQLAutomator::SQLite3 *issuedb, Reimu::IPEndPoint ep);
 
 	private:
 	    void ParseAPIData(const char *api_obj_name, vector<string> json_keys);
@@ -95,7 +114,7 @@ namespace AMSD {
 
 	class Issue {
 	public:
-	    class AvalonError : Reimu::SQLAutomator, Reimu::SQLAutomator::SQLite3 {
+	    class AvalonError {
 	    public:
 		enum AvalonErrNum {
 		    Idle = 1, CRCFailed = 2, NoFan = 4, Lock = 8, APIFIFOverflow = 16, RBOverflow = 32, TooHot = 64, HotBefore = 128,
@@ -106,13 +125,12 @@ namespace AMSD {
 
 		uint64_t ErrNum;
 		uint16_t AUC, Module;
-		uint64_t DNA;
+		uint8_t DNA[8] = {0};
 		time_t Time;
 
-		Reimu::IPEndPoint &RemoteEP;
-
-
 		AvalonError();
+		AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint64_t dna);
+		AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint8_t dna[8]);
 		AvalonError(vector<uint8_t> issue_desc);
 
 		vector<uint8_t> Desc();
@@ -121,9 +139,31 @@ namespace AMSD {
 		static string ToString(uint64_t ErrNum);
 		string ToString();
 
-		void WriteDatabase(SQLite3 &db);
 	    };
+
+	    enum IssueType {
+		Unknown = 0,
+		ConnectionFailure = 0x10, ConnectionTimeout = 0x11,
+		AvalonError = 0x20
+	    };
+
+	    time_t Time;
+	    IssueType Type = Unknown;
+
+	    Reimu::IPEndPoint RemoteEP;
+
+	    AvalonError *Error_Avalon = NULL;
+
+	    Issue();
+	    Issue(time_t time_now, IssueType type, Reimu::IPEndPoint remoteEP);
+	    Issue(time_t time_now, Reimu::IPEndPoint remoteEP, uint64_t errnum, uint16_t AUC, uint16_t Module, uint64_t DNA);
+
+	    ~Issue();
+
+	    void WriteDatabase(Reimu::SQLAutomator::SQLite3 *db);
+
 	};
+
     };
 }
 

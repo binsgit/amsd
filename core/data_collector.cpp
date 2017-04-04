@@ -28,7 +28,7 @@ static const string api_cmd_pools = "{\"command\":\"pools\"}";
 shared_timed_mutex Lock_DataCollector;
 
 size_t amsd_datacollection_interval = 120;
-struct timeval amsd_datacollection_conntimeout = {15, 0};
+c
 
 sqlite3_stmt *stmt_log_timeout;
 
