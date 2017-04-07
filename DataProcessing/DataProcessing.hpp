@@ -110,6 +110,40 @@ namespace AMSD {
 
 	class Report {
 	public:
+	    class Pool {
+	    public:
+		string URL;
+		string User;
+		double GHS = 0;
+	    };
+
+	    class Controller {
+	    public:
+		size_t Elapsed = 0;
+		Reimu::IPEndPoint RemoteEP;
+	    };
+
+	    class Farm {
+	    public:
+		size_t Modules = 0;
+		long double MHS = 0;
+
+		vector<Controller> Controllers;
+		map<pair<string, string>, Pool> Pools;
+	    };
+
+	public:
+	    string Name;
+	    Farm Farm0;
+	    timeval ProcessTime;
+
+	    Report(string farm_name, bool collect_pool=1);
+
+	    string HTMLReport();
+
+	private:
+	    void CollectData();
+	    bool CollectPool;
 	};
 
 	class Issue {

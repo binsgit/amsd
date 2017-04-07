@@ -138,7 +138,15 @@ DataProcessing::Collector::Collector() {
 
 	}
 
+	event_base_dispatch(eventbase);
+	event_base_free(eventbase);
+
+	for (auto &thisDBC : DBConnections) {
+		thisDBC.Exec("COMMIT");
+	}
+
 
 
 }
+
 
