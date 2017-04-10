@@ -139,7 +139,7 @@ namespace AMSD {
 
 	    Report(string farm_name, bool collect_pool=1);
 
-	    string HTMLReport();
+	    string HTML();
 
 	private:
 	    void CollectData();
