@@ -16,7 +16,7 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#include "Operations.hpp"
 
 std::map<std::string, std::pair<void *, bool>> Operations;
 
@@ -33,10 +33,10 @@ bool AMSD::Operations::Register(std::string name, int (*pfunc)(json_t*, json_t*&
 	std::pair<void *, bool> thisopt = std::pair<void *, bool>((void *)pfunc, auth_required);
 
 	if (Operations.insert(std::pair<std::string, std::pair<void *, bool>>(name, thisopt)).second) {
-		fprintf(stderr, "amsd: operations: Registered operation `%s' at %p\n", name.c_str(), pfunc);
+		fprintf(stderr, "amsd: Operations: Registered operation `%s' at %p\n", name.c_str(), pfunc);
 		return true;
 	} else {
-		fprintf(stderr, "amsd: operations: Failed to registered operation `%s' at %p: operation exists\n",
+		fprintf(stderr, "amsd: Operations: Failed to registered operation `%s' at %p: operation exists\n",
 			name.c_str(), pfunc);
 		return false;
 	}

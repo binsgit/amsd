@@ -315,3 +315,4 @@ int AMSD::Database::Init() {
 
 	return 0;
 }
+

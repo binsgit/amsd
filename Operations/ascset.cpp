@@ -16,7 +16,7 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#include "Operations.hpp"
 
 int AMSD::Operations::ascset(json_t *in_data, json_t *&out_data){
 	json_t *j_ip, *j_port, *j_op;

@@ -16,15 +16,25 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#include "Operations.hpp"
 
-int AMSD::Operations::glimpse(json_t *in_data, json_t *&out_data){
-	Report::Report rpt("", 0);
+int AMSD::Operations::rawapi(json_t *in_data, json_t *&out_data){
+	json_t *j_ip, *j_port, *j_req;
 
-	json_object_set_new(out_data, "mods", json_integer((long)rpt.Farm0.Modules));
-	json_object_set_new(out_data, "ctls", json_integer((long)rpt.Farm0.Controllers.size()));
-	json_object_set_new(out_data, "mhs", json_real((double)rpt.Farm0.MHS));
-	json_object_set_new(out_data, "mhs_t", json_integer((long)rpt.Farm0.Modules*1000*7300));
+	j_ip = json_object_get(in_data, "ip");
+	j_port = json_object_get(in_data, "port");
+	j_req = json_object_get(in_data, "req");
 
-	return 0;
+	if (!json_is_string(j_ip) || !json_is_integer(j_port) || !json_is_string(j_req))
+		return -1;
+
+	string reqret;
+
+	Reimu::IPEndPoint ep(string(json_string_value(j_ip)), (uint16_t)json_integer_value(j_port));
+
+	int ret = DataProcessing::CgMinerAPI::RequestRaw(ep, string(json_string_value(j_req)), reqret);
+
+	json_object_set_new(out_data, "ret", json_string(reqret.c_str()));
+
+	return ret;
 }

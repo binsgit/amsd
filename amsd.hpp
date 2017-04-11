@@ -65,35 +65,20 @@
 
 #include "compatibility.hpp"
 
-#include "runtime/runtime.hpp"
-#include "operations/operations.hpp"
+#include "Runtime/Runtime.hpp"
+#include "Operations/Operations.hpp"
+#include "DataProcessing/DataProcessing.hpp"
 
-#include "core/data_collector.hpp"
-#include "core/report.hpp"
-#include "core/issue.hpp"
 
 #include "lib/rfc1342.hpp"
 #include "lib/rfc3339.hpp"
-#include "lib/cgminer_api/cgminer_api.hpp"
-#include "lib/api_parser.hpp"
-#include "lib/avalon_errno.hpp"
 
-#define AMSD_VERSION		1.00
+#define AMSD_VERSION		2.01
 
 
 using namespace std;
 using namespace AMSD;
 
-#define db_open(p,s)	sqlite3_open_v2(p, &s, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE, NULL)
-#define db_close(s)	sqlite3_close(s)
-
-
-#define bi(n,a)		sqlite3_bind_int64(stmt, n, a)
-#define bd(n,d)		sqlite3_bind_double(stmt, n, d)
-#define bt(n,s)		sqlite3_bind_text(stmt, n, s, -1, SQLITE_STATIC)
-#define bb(n,b,s)	sqlite3_bind_blob64(stmt, n, b, s, SQLITE_STATIC)
-
-#define NoLoginReq_Flag		asm volatile("nop; nop; nop; nop")
 
 
 struct amsd_si_ctx {
@@ -172,38 +157,6 @@ extern int amsd_request_parse(char *inputstr, string &outputstr);
 class User {
     string UserName;
     string NickName;
-};
-
-
-
-class MMUpgrade {
-private:
-    static void MMUpgradeInstance(MMUpgrade *m);
-    static void *MMUpgradeThread(void *p);
-    pthread_t ThreadId;
-    pthread_mutex_t mutex_msg = PTHREAD_MUTEX_INITIALIZER;
-    string _Message = "";
-public:
-    enum MMUpdStatus {
-	Uninitialized = 0,
-	DownloadInProgress = 0x11, UpgradeInProgress = 0x12,
-	DownloadFinished = 0x21, UpgradeFinished = 0x22,
-	DownloadError = 0x31, UpgradeError = 0x32,
-	WaitingFinish = 0x41,
-	Finished = 0x51
-    };
-
-    string IP = "";
-    string URL_MCS = "";
-
-    MMUpdStatus Status = Uninitialized;
-    string Message();
-    static void Message(MMUpgrade *mu, string m);
-
-    int DownloadPercent = 0;
-    int UpgradePercent = 0;
-
-    void Exec();
 };
 
 class SSHConnection {

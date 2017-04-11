@@ -16,7 +16,7 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#include "Operations.hpp"
 
 const char *scripts_path = "/etc/ams/srtac_scripts.json";
 static pthread_mutex_t scripts_fileio_lock = PTHREAD_MUTEX_INITIALIZER;

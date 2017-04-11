@@ -16,7 +16,7 @@
     along with AMSD.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../amsd.hpp"
+#include "Operations.hpp"
 
 int AMSD::Operations::config(json_t *in_data, json_t *&out_data) {
 	json_t *j_op = json_object_get(in_data, "op");

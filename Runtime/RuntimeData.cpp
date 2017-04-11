@@ -23,6 +23,8 @@ static uint8_t *RuntimeData_Memory = NULL;
 static uint8_t *RDM_OFFSET_TimeStamp_CurrentDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_LastDataCollection;
 
+string AMSD::RuntimeData::Path_RuntimeDir = "/var/lib/ams/";
+
 int AMSD::RuntimeData::Init() {
 	string shm_path = path_runtime + "RuntimeData";
 	RuntimeData_Memory = reimu_shm_open(shm_path, 32768);
