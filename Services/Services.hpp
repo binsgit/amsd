@@ -14,8 +14,27 @@ namespace AMSD {
 
 	static int Init();
 
-	static void API_UnixSocket(void *userp);
-	static void API_TCP(void *userp);
+	class API {
+	    struct ConCtx {
+		int fd;
+		pthread_t tid;
+
+		vector<uint8_t> *buf_in;
+		vector<uint8_t> *buf_out;
+	    };
+
+	    static int ParseRequest(char *inputstr, string &outputstr);
+	    static void ConnectionHandler(ConCtx *data);
+	    static void *ConnectionThread(void *data);
+
+	public:
+
+	    static void UnixSocket(void *userp);
+	    static void TCP(void *userp);
+
+	};
+
+
 	static void DataCollector(void *userp);
 	static void MailReport(void *userp);
     };

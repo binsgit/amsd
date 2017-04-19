@@ -82,13 +82,7 @@ using namespace AMSD;
 
 
 
-struct amsd_si_ctx {
-    int fd;
-    pthread_t tid;
 
-    vector<uint8_t> *buf_in;
-    vector<uint8_t> *buf_out;
-};
 
 
 enum GeneralStatus {
