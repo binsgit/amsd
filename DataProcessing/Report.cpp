@@ -28,8 +28,6 @@ void DataProcessing::Report::CollectData() {
 
 	Pool *poolbuf;
 
-
-
 	thissummarydb.Prepare("SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port");
 
 	thissummarydb.Bind(1, RuntimeData::TimeStamp::LastDataCollection());

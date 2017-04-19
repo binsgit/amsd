@@ -71,5 +71,27 @@ int AMSD::Config::Load(string filename) {
 }
 
 int AMSD::Config::Save(string filename) {
-	return 0;
+
+	Lock.lock();
+
+	j_newcfg = json_object();
+
+	for (auto target_l1 = Config.begin(); target_l1 != Config.end(); ++target_l1) {
+
+		j_newcfg_section = json_object();
+
+		for (auto target_l2 = target_l1->second.begin(); target_l2 != target_l1->second.end(); ++target_l2) {
+			json_object_set_new(j_newcfg_section, target_l2->first.c_str(), json_string(target_l2->second.c_str()));
+		}
+
+		json_object_set_new(j_newcfg, target_l1->first.c_str(), j_newcfg_section);
+	}
+
+
+	int ret = json_dump_file(j_newcfg, filename.c_str(), JSON_INDENT(4));
+	json_decref(j_newcfg);
+
+	Lock.unlock();
+
+	return ret;
 }

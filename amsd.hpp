@@ -59,6 +59,7 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
+#include <libReimu/Tasker/Tasker.hpp>
 #include <libReimu/UniversalType/UniversalType.hpp>
 #include <libReimu/IPEndPoint/IPEndPoint.hpp>
 #include <libReimu/SQLAutomator/SQLAutomator.hpp>
@@ -120,8 +121,6 @@ extern string amsd_local_superuser_token;
 extern int amsd_server();
 
 // Core
-extern void amsd_datacollector();
-extern void amsd_report_mail();
 
 // Config
 extern int amsd_save_config(const char *filename="/etc/ams/config.json", bool nolock=false);
@@ -152,12 +151,6 @@ extern int amsd_user_auth(string token, User *userinfo);
 
 // Request
 extern int amsd_request_parse(char *inputstr, string &outputstr);
-
-
-class User {
-    string UserName;
-    string NickName;
-};
 
 class SSHConnection {
 private:

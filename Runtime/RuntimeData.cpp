@@ -18,21 +18,44 @@
 
 #include "../amsd.hpp"
 
+#define AMSD_NVRAM_SIZE			32
+
+
 static uint8_t *RuntimeData_Memory = NULL;
+
+static const char Current_NVRAM_Version[] = "AMSD NVRAM REV 1.000";
+
+static uint8_t *RDM_OFFSET_NVRAM_Version;
 
 static uint8_t *RDM_OFFSET_TimeStamp_CurrentDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_LastDataCollection;
+static uint8_t *RDM_OFFSET_TimeStamp_DBFirstDataCollection;
 
 string AMSD::RuntimeData::Path_RuntimeDir = "/var/lib/ams/";
 
 int AMSD::RuntimeData::Init() {
-	string shm_path = path_runtime + "RuntimeData";
-	RuntimeData_Memory = reimu_shm_open(shm_path, 32768);
+	string shm_path = path_runtime + "NVRAM";
+	RuntimeData_Memory = reimu_shm_open(shm_path, AMSD_NVRAM_SIZE*1024);
 	if (!RuntimeData_Memory)
 		return -2;
 
+	cerr << "amsd: RuntimeData: " << AMSD_NVRAM_SIZE << "KB NVRAM present\n";
+
+	RDM_OFFSET_NVRAM_Version = RuntimeData_Memory;
+
+	if (RDM_OFFSET_NVRAM_Version[0] == 0) {
+		strcpy((char *)RDM_OFFSET_NVRAM_Version, Current_NVRAM_Version);
+		msync(RDM_OFFSET_NVRAM_Version, 24, MS_SYNC);
+	} else {
+		if (strcmp((char *)RDM_OFFSET_NVRAM_Version, Current_NVRAM_Version)) {
+			cerr << "amsd: RuntimeData: Warning: NVRAM version mismatch!! Please fix.\n";
+			abort();
+		}
+	}
+
 	RDM_OFFSET_TimeStamp_CurrentDataCollection = RuntimeData_Memory + 128;
 	RDM_OFFSET_TimeStamp_LastDataCollection = RDM_OFFSET_TimeStamp_CurrentDataCollection + 8;
+	RDM_OFFSET_TimeStamp_DBFirstDataCollection = RDM_OFFSET_TimeStamp_LastDataCollection + 8;
 
 	return 0;
 }
