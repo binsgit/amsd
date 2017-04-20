@@ -18,12 +18,12 @@
 
 #include "Operations.hpp"
 
-std::map<std::string, std::pair<void *, bool>> Operations;
+std::map<std::string, std::pair<void *, bool>> OperationsList;
 
 std::pair<void *, bool> AMSD::Operations::Get(std::string name) {
-	std::map<std::string, std::pair<void *, bool>>::const_iterator target = Operations.find(name);
+	std::map<std::string, std::pair<void *, bool>>::const_iterator target = OperationsList.find(name);
 
-	if (target == Operations.end())
+	if (target == OperationsList.end())
 		throw 0x23336666;
 	else
 		return target->second;
@@ -32,7 +32,7 @@ std::pair<void *, bool> AMSD::Operations::Get(std::string name) {
 bool AMSD::Operations::Register(std::string name, int (*pfunc)(json_t*, json_t*&), bool auth_required) {
 	std::pair<void *, bool> thisopt = std::pair<void *, bool>((void *)pfunc, auth_required);
 
-	if (Operations.insert(std::pair<std::string, std::pair<void *, bool>>(name, thisopt)).second) {
+	if (OperationsList.insert(std::pair<std::string, std::pair<void *, bool>>(name, thisopt)).second) {
 		fprintf(stderr, "amsd: Operations: Registered operation `%s' at %p\n", name.c_str(), pfunc);
 		return true;
 	} else {

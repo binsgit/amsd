@@ -18,8 +18,7 @@
 
 #include "Operations.hpp"
 
-class mController {
-public:
+static struct mController {
     bool Dead = false;
     string IP;
     int Port = 0;
@@ -28,63 +27,91 @@ public:
     double TempSum = 0, TMaxSum = 0;
 };
 
-int AMSD::Operations::farmap(json_t *in_data, json_t *&out_data){
-	NoLoginReq_Flag;
+static struct dtCtx {
+    time_t LastDataCollection;
+    pthread_mutex_t Lock;
+    map<string, mController> *ctls;
+};
 
-	sqlite3 *db[3];
-	sqlite3_stmt *stmt[3];
+static void *getModules(void *pctx) {
+	try {
+		dtCtx *dc = (dtCtx *) pctx;
+
+		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+
+		thisdb.Prepare("SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE Time = ?1");
+		thisdb.Bind(1, dc->LastDataCollection);
+
+		mController *ctl;
+
+		while (thisdb.Step() == SQLITE_ROW) {
+			Reimu::IPEndPoint thisEP(thisdb.Column(0), (uint16_t) thisdb.ColumnBytes(0), thisdb.Column(1));
+
+			pthread_mutex_lock(&dc->Lock);
+			ctl = &dc->ctls->operator[](thisEP.ToString());
+			pthread_mutex_unlock(&dc->Lock);
+
+			ctl->IP = thisEP.ToString(Reimu::IPEndPoint::String_IP);
+			ctl->Port = thisEP.Port;
+			ctl->GHS += thisdb.Column(2);
+			ctl->TempSum += thisdb.Column(3);
+			ctl->TMaxSum += thisdb.Column(4);
+			ctl->Mods++;
+		}
+	} catch (Reimu::Exception e) {
+
+	}
+
+	pthread_exit(NULL);
+}
+
+static void *getDeads(void *pctx) {
+	try {
+		dtCtx *dc = (dtCtx *)pctx;
+
+		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+
+		thisdb.Prepare("SELECT Addr, Port FROM issue WHERE Time = ?1 AND Type >= 0x10 AND Type < 0x20");
+		thisdb.Bind(1, dc->LastDataCollection);
+
+		mController *ctl;
+
+		while (thisdb.Step() == SQLITE_ROW) {
+			Reimu::IPEndPoint thisEP(thisdb.Column(0), (uint16_t)thisdb.ColumnBytes(0), thisdb.Column(1));
+
+			pthread_mutex_lock(&dc->Lock);
+			ctl = &dc->ctls->operator[](thisEP.ToString());
+			pthread_mutex_unlock(&dc->Lock);
+
+			ctl->Dead = 1;
+		}
+	} catch (Reimu::Exception e) {
+
+	}
+
+	pthread_exit(NULL);
+}
+
+
+int AMSD::Operations::farmap(json_t *in_data, json_t *&out_data){
+
 
 	json_t *j_ctls = json_array();
 	json_t *j_ctl;
 
-	void *addr;
-	size_t addrlen;
-	uint16_t port;
-	string saddr;
-
 	map<string, mController> ctls;
-	mController *ctl;
 
-	db_open(db_module_avalon7.DatabaseURI.c_str(), db[0]);
-	sqlite3_prepare(db[0], "SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE "
-		"Time = ?1", -1, &stmt[0], NULL);
+	dtCtx thisCtx;
 
-	sqlite3_bind_int64(stmt[0], 1, RuntimeData::TimeStamp::LastDataCollection());
+	thisCtx.ctls = &ctls;
 
-	while (sqlite3_step(stmt[0]) == SQLITE_ROW) {
-		addr = (void *)sqlite3_column_blob(stmt[0], 0);
-		addrlen = (size_t)sqlite3_column_bytes(stmt[0], 0);
-		port = (uint16_t)sqlite3_column_int(stmt[0], 1);
+	pthread_t t_gm, t_gd;
 
-		saddr = strbinaddr(addr, addrlen);
+	pthread_create(&t_gm, &_pthread_detached, &getModules, &thisCtx);
+	pthread_create(&t_gd, &_pthread_detached, &getDeads, &thisCtx);
 
-		ctl = &ctls[saddr+":"+to_string(port)];
-
-		ctl->IP = saddr;
-		ctl->Port = port;
-		ctl->GHS += sqlite3_column_double(stmt[0], 2);
-		ctl->TempSum += sqlite3_column_int64(stmt[0], 3);
-		ctl->TMaxSum += sqlite3_column_int64(stmt[0], 4);
-		ctl->Mods++;
-	}
-
-	db_open(db_issue.DatabaseURI.c_str(), db[1]);
-	sqlite3_prepare(db[1], "SELECT Addr, Port FROM issue WHERE Time = ?1 AND "
-		"Type >= 0x10 AND Type < 0x20", -1, &stmt[1], NULL);
-
-	sqlite3_bind_int64(stmt[1], 1, RuntimeData::TimeStamp::LastDataCollection());
-
-	while (sqlite3_step(stmt[1]) == SQLITE_ROW) {
-		addr = (void *)sqlite3_column_blob(stmt[0], 0);
-		addrlen = (size_t)sqlite3_column_bytes(stmt[0], 0);
-		port = (uint16_t)sqlite3_column_int(stmt[0], 1);
-
-		saddr = strbinaddr(addr, addrlen);
-
-		ctl = &ctls[saddr+":"+to_string(port)];
-
-		ctl->Dead = 1;
-	}
+	pthread_join(t_gm, NULL);
+	pthread_join(t_gd, NULL);
 
 	for (auto const &it: ctls) {
 		j_ctl = json_object();
@@ -99,13 +126,6 @@ int AMSD::Operations::farmap(json_t *in_data, json_t *&out_data){
 
 		json_array_append_new(j_ctls, j_ctl);
 	}
-
-
-	for (int i=0; i<2; i++) {
-		sqlite3_finalize(stmt[i]);
-		db_close(db[i]);
-	}
-
 
 	json_object_set_new(out_data, "Controllers", j_ctls);
 

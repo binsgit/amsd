@@ -18,8 +18,33 @@
 
 #include "DataProcessing.hpp"
 
+const vector<string> AMSD::DataProcessing::CgMinerAPI::JsonKeys_Summary = {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
+						"Found Blocks", "Getworks", "Accepted", "Rejected", "Hardware Errors",
+						"Utility", "Discarded", "Stale", "Get Failures", "Local Work",
+						"Remote Failures", "Network Blocks", "Total MH", "Work Utility",
+						"Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
+						"Best Share", "Device Hardware%", "Device Rejected%", "Pool Rejected%",
+						"Pool Stale%", "Last getwork"};
+const vector<string> AMSD::DataProcessing::CgMinerAPI::JsonKeys_Pool = {"POOL", "URL", "Status", "Priority", "Quota", "Long Poll", "Getworks",
+					     "Accepted", "Rejected", "Works", "Discarded", "Stale", "Get Failures",
+					     "Remote Failures", "User", "Last Share Time", "Diff1 Shares", "Proxy Type",
+					     "Proxy", "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
+					     "Last Share Difficulty", "Work Difficulty", "Has Stratum",
+					     "Stratum Active", "Stratum URL", "Stratum Difficulty", "Has GBT",
+					     "Best Share", "Pool Rejected%", "Pool Stale%", "Bad Work",
+					     "Current Block Height", "Current Block Version"};
+const vector<string> AMSD::DataProcessing::CgMinerAPI::JsonKeys_Device = {"ASC", "Name", "ID", "Enabled", "Status", "Temperature", "MHS av",
+					       "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m", "Accepted", "Rejected",
+					       "Hardware Errors", "Utility", "Last Share Pool", "Last Share Time",
+					       "Total MH", "Diff1 Work", "Difficulty Accepted", "Difficulty Rejected",
+					       "Last Share Difficulty", "No Device", "Last Valid Work",
+					       "Device Hardware%", "Device Rejected%", "Device Elapsed"};
+const string AMSD::DataProcessing::CgMinerAPI::QueryString_Summary = "{\"command\":\"summary\"}";
+const string AMSD::DataProcessing::CgMinerAPI::QueryString_EStats = "{\"command\":\"estats\"}";
+const string AMSD::DataProcessing::CgMinerAPI::QueryString_EDevs = "{\"command\":\"edevs\"}";
+const string AMSD::DataProcessing::CgMinerAPI::QueryString_Pools = "{\"command\":\"pools\"}";
+
 using Reimu::SQLAutomator;
-using Reimu::SQLAutomator::SQLite3;
 
 int DataProcessing::CgMinerAPI::RequestRaw(Reimu::IPEndPoint ep, string in_data, string &out_data) {
 	int fd, ret = 0;
@@ -149,7 +174,7 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 		}
 
 	} catch (Reimu::Exception e) {
-		fprintf(stderr, "amsd: CgMinerAPI: error writing database: %s\n", e.what());
+		fprintf(stderr, "amsd: CgMinerAPI: error writing database: %s\n", e.what().c_str());
 	}
 
 	end:
@@ -158,7 +183,7 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 
 
 void DataProcessing::CgMinerAPI::Process() {
-	fprintf(stderr, "amsd: CgMinerAPI: processing %s for %s\n", ToString(Type), RemoteEP.ToString());
+	fprintf(stderr, "amsd: CgMinerAPI: processing %s for %s\n", ToString(Type), RemoteEP.ToString().c_str());
 
 	json_error_t j_err;
 
@@ -166,7 +191,7 @@ void DataProcessing::CgMinerAPI::Process() {
 		Reimu::Exception e(&j_err);
 
 		fprintf(stderr, "amsd: CgMinerAPI: error processing %s for %s: json error: %s\n", ToString(Type),
-			RemoteEP.ToString(), e.what());
+			RemoteEP.ToString().c_str(), e.what().c_str());
 
 		throw e;
 	}
@@ -236,11 +261,12 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 
 			for (auto &thisCrap : killedCrap) {
 				if (thisCrap.second.size() == 1) {
-					sequencedCrap[thisCrap.first] = thisCrap.second[0];
+					sequencedCrap.insert(pair<string, Reimu::UniversalType>(thisCrap.first, thisCrap.second[0]));
+
 				} else {
 					int ccounter = 0;
 					for (auto &moreCrap : thisCrap.second) {
-						sequencedCrap[thisCrap.first+"_"+to_string(ccounter)] = moreCrap;
+						sequencedCrap.insert(pair<string, Reimu::UniversalType>(thisCrap.first+"_"+to_string(ccounter), moreCrap));
 						ccounter++;
 					}
 				}

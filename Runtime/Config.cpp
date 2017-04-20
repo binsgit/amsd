@@ -12,6 +12,11 @@ void AMSD::Config::Init() {
 	Config["Farm"]["Name"] = "Miku's Farm";
 	Config["Farm"]["Description"] = "喵喵喵喵喵";
 
+	Config["API_Unix"]["Enabled"] = "1";
+
+	Config["API_TCP"]["Enabled"] = "0";
+	Config["API_TCP6"]["Enabled"] = "0";
+
 	Config["DataCollector"]["ConnTimeout"] = "30";
 	Config["DataCollector"]["CollectInterval"] = "600";
 

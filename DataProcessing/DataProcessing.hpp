@@ -9,11 +9,17 @@
 
 using namespace Reimu;
 using Reimu::SQLAutomator;
-using Reimu::SQLAutomator::SQLite3;
+
 
 namespace AMSD {
     class DataProcessing {
     public:
+	class Collector;
+	class CgMinerAPI;
+	class Report;
+	class Issue;
+
+
 	class Collector {
 	public:
 
@@ -22,10 +28,10 @@ namespace AMSD {
 		CgMinerAPI *thisAPIProcessor;
 	    };
 
-	    SQLite3 DBC_Controllers;
-	    SQLite3 DBC_Issue;
+	    SQLAutomator::SQLite3 DBC_Controllers;
+	    SQLAutomator::SQLite3 DBC_Issue;
 
-	    vector<SQLite3> DBConnections;
+	    vector<SQLAutomator::SQLite3> DBConnections;
 
 	    time_t TimeStamp;
 	    struct timeval TimeOut = {15, 0};
@@ -45,34 +51,13 @@ namespace AMSD {
 	class CgMinerAPI {
 
 	public:
-	    static const vector<string> JsonKeys_Summary = {"Elapsed", "MHS av", "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m",
-							    "Found Blocks", "Getworks", "Accepted", "Rejected", "Hardware Errors",
-							    "Utility", "Discarded", "Stale", "Get Failures", "Local Work",
-							    "Remote Failures", "Network Blocks", "Total MH", "Work Utility",
-							    "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
-							    "Best Share", "Device Hardware%", "Device Rejected%", "Pool Rejected%",
-							    "Pool Stale%", "Last getwork"};
-
-	    static const vector<string> JsonKeys_Pool = {"POOL", "URL", "Status", "Priority", "Quota", "Long Poll", "Getworks",
-							 "Accepted", "Rejected", "Works", "Discarded", "Stale", "Get Failures",
-							 "Remote Failures", "User", "Last Share Time", "Diff1 Shares", "Proxy Type",
-							 "Proxy", "Difficulty Accepted", "Difficulty Rejected", "Difficulty Stale",
-							 "Last Share Difficulty", "Work Difficulty", "Has Stratum",
-							 "Stratum Active", "Stratum URL", "Stratum Difficulty", "Has GBT",
-							 "Best Share", "Pool Rejected%", "Pool Stale%", "Bad Work",
-							 "Current Block Height", "Current Block Version"};
-
-	    static const vector<string> JsonKeys_Device = {"ASC", "Name", "ID", "Enabled", "Status", "Temperature", "MHS av",
-							   "MHS 5s", "MHS 1m", "MHS 5m", "MHS 15m", "Accepted", "Rejected",
-							   "Hardware Errors", "Utility", "Last Share Pool", "Last Share Time",
-							   "Total MH", "Diff1 Work", "Difficulty Accepted", "Difficulty Rejected",
-							   "Last Share Difficulty", "No Device", "Last Valid Work",
-							   "Device Hardware%", "Device Rejected%", "Device Elapsed"};
-
-	    static const string QueryString_Summary = "{\"command\":\"summary\"}";
-	    static const string QueryString_EStats = "{\"command\":\"estats\"}";
-	    static const string QueryString_EDevs = "{\"command\":\"edevs\"}";
-	    static const string QueryString_Pools = "{\"command\":\"pools\"}";
+	    static const vector<string> JsonKeys_Summary;
+	    static const vector<string> JsonKeys_Pool;
+	    static const vector<string> JsonKeys_Device;
+	    static const string QueryString_Summary;
+	    static const string QueryString_EStats;
+	    static const string QueryString_EDevs;
+	    static const string QueryString_Pools;
 
 	    enum APIType {
 		Summary = 1, EStats = 2, EDevs = 3, Pools = 4
@@ -186,7 +171,7 @@ namespace AMSD {
 
 	    Reimu::IPEndPoint RemoteEP;
 
-	    AvalonError *Error_Avalon = NULL;
+	    void *Error_Avalon = NULL;
 
 	    Issue();
 	    Issue(time_t time_now, IssueType type, Reimu::IPEndPoint remoteEP);

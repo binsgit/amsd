@@ -298,18 +298,18 @@ int AMSD::Database::Init() {
 			}
 
 
-			SQLite3 sq3 = thisdb->OpenSQLite3(SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE |
+			SQLite3 sq3 = thisdb->OpenSQLite3(-1, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE |
 							  SQLITE_OPEN_CREATE, NULL);
 
 			sq3.Exec(thisdb->Statement(CREATE_TABLE));
 
 		} catch (Reimu::Exception e) {
 			fprintf(stderr, "amsd: database: failed to open/initialize database %s: %s\n",
-				thisdb->TableName, e.ToString());
+				thisdb->TableName, e.ToString().c_str());
 			return -1;
 		}
 
-		fprintf(stderr, "amsd: database: processed database %s\n", thisdb->TableName);
+		fprintf(stderr, "amsd: database: processed database %s\n", thisdb->TableName.c_str());
 
 	}
 

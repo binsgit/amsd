@@ -80,10 +80,8 @@ int main() {
 
 	cerr << "Remember: Too many rules will ONLY make people STUPID. - Author\n";
 
-	amsd_datacollector();
-	amsd_server();
-
-
+	while (1)
+		sleep(-1);
 
 	return 0;
 }

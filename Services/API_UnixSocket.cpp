@@ -50,7 +50,7 @@ void Services::API::UnixSocket(void *userp) {
 
 		fprintf(stderr, "amsd: server: new connection, fd %d\n", fd_client);
 
-		amsd_si_ctx *newctx = (amsd_si_ctx *)calloc(1, sizeof(struct amsd_si_ctx));
+		ConCtx *newctx = (ConCtx *)calloc(1, sizeof(struct amsd_si_ctx));
 		newctx->fd = fd_client;
 
 		pthread_create(&newctx->tid, &_pthread_detached, ConnectionThread, newctx);
