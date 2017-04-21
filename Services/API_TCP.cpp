@@ -4,7 +4,7 @@
 
 #include "Services.hpp"
 
-void Services::API::TCP(void *userp) {
+void AMSD::Services::API::TCP(void *userp) {
 //	struct sockaddr_in listen_addr;
 //	int fd_listener,fd_client,rc;
 //

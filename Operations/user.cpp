@@ -34,7 +34,7 @@ int AMSD::Operations::user(json_t *in_data, json_t *&out_data) {
 
 	string op(json_string_value(j_op));
 
-	SQLite3 sq3 = db_user.OpenSQLite3();
+	SQLAutomator::SQLite3 sq3 = db_user.OpenSQLite3();
 
 
 	if (op == "add") {

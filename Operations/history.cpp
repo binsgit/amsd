@@ -18,14 +18,73 @@
 
 #include "Operations.hpp"
 
+struct pCtx_i {
+    time_t LastDataCollection;
+    pthread_mutex_t Lock = PTHREAD_MUTEX_INITIALIZER;
+
+    map<int64_t, int64_t> times_elapsed;
+
+    vector<time_t> TimeTemp;
+    vector<string> URLTemp;
+    vector<double> SDATemp;
+
+    map<string, map<int64_t, double>> sorter;
+};
+
+static void *getSummary(void *userp){
+	pCtx_i *thisCtx = (pCtx_i *)userp;
+
+	try {
+		SQLAutomator::SQLite3 thisdb = db_summary.OpenSQLite3();
+
+		thisdb.Prepare("SELECT Time, SUM(Elapsed) FROM summary WHERE Time >= ?1 GROUP BY Time");
+		thisdb.Bind(1, thisCtx->LastDataCollection-864000);
+
+		while (thisdb.Step() == SQLITE_ROW) {
+			int64_t thistime = thisdb.Column(0);
+			int64_t thiselapsed = thisdb.Column(1);
+
+			thisCtx->times_elapsed[thistime] = thiselapsed;
+		}
+	} catch (Reimu::Exception e) {
+
+
+	}
+
+	pthread_exit(NULL);
+
+}
+
+static void *getPool(void *userp) {
+	pCtx_i *thisCtx = (pCtx_i *) userp;
+
+	try {
+		SQLAutomator::SQLite3 thisdb = db_pool.OpenSQLite3();
+
+		thisdb.Prepare("SELECT Time, URL, SUM(DifficultyAccepted) FROM pool WHERE Time >= ?1 GROUP BY Time, URL");
+		thisdb.Bind(1, thisCtx->LastDataCollection - 864000);
+
+		while (thisdb.Step() == SQLITE_ROW) {
+			thisCtx->TimeTemp.push_back((int64_t)thisdb.Column(0));
+			thisCtx->URLTemp.push_back(thisdb.Column(1).operator std::string());
+			thisCtx->SDATemp.push_back((double)thisdb.Column(2));
+
+
+		}
+	} catch (Reimu::Exception e) {
+
+
+	}
+
+	pthread_exit(NULL);
+
+}
+
 int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 
 	json_t *j_type = json_object_get(in_data, "type");
 	json_t *j_timearray, *j_valuearray, *j_value2array;
 	json_t *j_objtmp;
-
-	sqlite3 *thisdb, *thisdb1;
-	sqlite3_stmt *stmt, *stmt1;
 
 	if (!json_is_string(j_type))
 		return -1;
@@ -33,48 +92,21 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 	string type(json_string_value(j_type));
 
 	if (type == "hashrate") {
-		map<int64_t, int64_t> times_elapsed;
-		map<string, map<int64_t, double>> sorter1;
-		int64_t thistime, thiselapsed;
 
-		db_open(db_pool.DatabaseURI.c_str(), thisdb);
-		db_open(db_summary.DatabaseURI.c_str(), thisdb1);
+		pCtx_i thisCtx;
+		thisCtx.LastDataCollection = RuntimeData::TimeStamp::LastDataCollection();
 
-		sqlite3_prepare_v2(thisdb1, "SELECT Time, SUM(Elapsed) FROM summary "
-			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt1, NULL);
+		pthread_t t_gs, t_gp;
 
-		sqlite3_prepare(thisdb, "SELECT Time, URL, SUM(DifficultyAccepted) FROM pool "
-			"WHERE Time >= ?1 GROUP BY Time, URL", -1, &stmt, NULL);
-
-		sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
-		sqlite3_bind_int64(stmt1, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
-
-		while (sqlite3_step(stmt1) == SQLITE_ROW) {
-			thistime = sqlite3_column_int64(stmt1, 0);
-			thiselapsed = sqlite3_column_int64(stmt1, 1);
-//			fprintf(stderr,"aaaa: %" PRIu64 " %" PRIu64 "\n", thistime, thiselapsed);
-			times_elapsed[thistime] = thiselapsed;
-		}
-
-		while (sqlite3_step(stmt) == SQLITE_ROW) {
-			thistime = sqlite3_column_int64(stmt, 0);
-
-//			fprintf(stderr,"xxxx: %" PRIu64 " %s %ld\n", thistime, sqlite3_column_text(stmt, 1), times_elapsed[thistime]);
-			sorter1[string((char *)sqlite3_column_text(stmt, 1))]
-			[thistime] =
-				diffaccept2ghs(sqlite3_column_double(stmt, 2), (size_t)times_elapsed[thistime]);
-		}
-
-		sqlite3_finalize(stmt);
-		sqlite3_finalize(stmt1);
-
-		db_close(thisdb);
-		db_close(thisdb1);
+		pthread_create(&t_gs, &_pthread_detached, &getSummary, &thisCtx);
+		pthread_create(&t_gp, &_pthread_detached, &getPool, &thisCtx);
 
 
 		j_value2array = json_array();
 
-		for (auto const &it_t: times_elapsed) {
+		pthread_join(t_gs, NULL);
+
+		for (auto const &it_t: thisCtx.times_elapsed) {
 			json_array_append_new(j_value2array, json_integer(it_t.first));
 		}
 
@@ -82,11 +114,19 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 
 		j_value2array = json_array();
 
-		for (auto &it_s: sorter1) {
+		pthread_join(t_gp, NULL);
+
+		for (int j=0; j<thisCtx.TimeTemp.size(); j++) {
+			time_t thistime = thisCtx.TimeTemp[j];
+			thisCtx.sorter[thisCtx.URLTemp[j]][thistime] =
+				diffaccept2ghs(thisCtx.SDATemp[j], (size_t)thisCtx.times_elapsed[thistime]);
+		}
+
+		for (auto &it_s: thisCtx.sorter) {
 
 			j_objtmp = json_object();
 
-			for (auto &it_t: times_elapsed) {
+			for (auto &it_t: thisCtx.times_elapsed) {
 				it_s.second.insert(pair<int64_t, double>((int64_t)it_t.first, (double)0));
 			}
 
@@ -106,24 +146,23 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 		json_object_set_new(out_data, "mdzz", j_value2array);
 
 	} else if (type == "aliverate") {
-		db_open(db_module_avalon7.DatabaseURI.c_str(), thisdb);
-		sqlite3_prepare(thisdb, "SELECT Time, Count(DISTINCT(Addr)), Count(ModuleID) FROM module_avalon7 "
-			"WHERE Time >= ?1 GROUP BY Time", -1, &stmt, NULL);
 
-		sqlite3_bind_int64(stmt, 1, RuntimeData::TimeStamp::LastDataCollection()-864000);
+		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+
+
+		thisdb.Prepare("SELECT Time, Count(DISTINCT(Addr)), Count(ModuleID) FROM module_avalon7 WHERE Time >= ?1 GROUP BY Time");
+
+		thisdb.Bind(1, RuntimeData::TimeStamp::LastDataCollection()-864000);
 
 		j_timearray = json_array();
 		j_valuearray = json_array();
 		j_value2array = json_array();
 
-		while (sqlite3_step(stmt) == SQLITE_ROW) {
-			json_array_append_new(j_timearray, json_integer(sqlite3_column_int64(stmt, 0)));
-			json_array_append_new(j_valuearray, json_integer(sqlite3_column_int64(stmt, 1)));
-			json_array_append_new(j_value2array, json_integer(sqlite3_column_int64(stmt, 2)));
+		while (thisdb.Step() == SQLITE_ROW) {
+			json_array_append_new(j_timearray, json_integer(thisdb.Column(0)));
+			json_array_append_new(j_valuearray, json_integer(thisdb.Column(1)));
+			json_array_append_new(j_value2array, json_integer(thisdb.Column(2)));
 		}
-
-		sqlite3_finalize(stmt);
-		db_close(thisdb);
 
 		json_object_set_new(out_data, "times", j_timearray);
 		json_object_set_new(out_data, "ctls", j_valuearray);

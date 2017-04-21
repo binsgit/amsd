@@ -6,7 +6,7 @@
 
 #define BUF_SIZE	128
 
-int Services::API::ParseRequest(char *inputstr, string &outputstr) {
+int AMSD::Services::API::ParseRequest(char *inputstr, string &outputstr) {
 	json_error_t err;
 	json_t *i_json_root = json_loads((const char *)inputstr, 0, &err);
 	json_t *j_operation, *j_data, *o_json_root, *o_json_opdata, *o_json_rc;
@@ -71,7 +71,7 @@ int Services::API::ParseRequest(char *inputstr, string &outputstr) {
 			goto autherr;
 		}
 	} else {
-		if (amsd_user_auth(string(json_string_value(j_auth)), NULL)) {
+		if (AMSD::User::Auth(string(json_string_value(j_auth)), NULL)) {
 			fprintf(stderr, "amsd: request %p: error: operation `%s' authentication failed\n", (void *)inputstr, operation.c_str());
 			goto autherr;
 		}
@@ -151,7 +151,7 @@ void Services::API::ConnectionHandler(Services::API::ConCtx *data) {
 	input_str = (char *)&input[0];
 
 	fprintf(stderr, "amsd: server: parsing input %p\n", (void *)input_str);
-	amsd_request_parse(input_str, output);
+	ParseRequest(input_str, output);
 
 	cerr << "amsd: server: fd " << fd << " output: " << output << "\n";
 	send(fd, output.c_str(), output.length(), MSG_WAITALL);

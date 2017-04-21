@@ -37,7 +37,7 @@ int AMSD::Operations::config(json_t *in_data, json_t *&out_data) {
 
 		Lock_Config.lock_shared();
 
-		j_value = json_string(Config[key][subkey].c_str());
+		j_value = json_string(ConfigList[key][subkey].c_str());
 
 		json_object_set_new(out_data, "value", j_value);
 
@@ -57,9 +57,9 @@ int AMSD::Operations::config(json_t *in_data, json_t *&out_data) {
 
 		Lock_Config.lock();
 
-		Config[key][subkey] = value;
+		ConfigList[key][subkey] = value;
 
-		amsd_save_config("/etc/ams/config.json", 1);
+		Config::Save();
 
 		Lock_Config.unlock();
 

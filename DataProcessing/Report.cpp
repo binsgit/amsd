@@ -15,8 +15,8 @@ DataProcessing::Report::Report(string farm_name, bool collect_pool) {
 }
 
 void DataProcessing::Report::CollectData() {
-	SQLite3 thissummarydb = db_summary.OpenSQLite3();
-	SQLite3 thismoduledb = db_module_avalon7.OpenSQLite3();
+	SQLAutomator::SQLite3 thissummarydb = db_summary.OpenSQLite3();
+	SQLAutomator::SQLite3 thismoduledb = db_module_avalon7.OpenSQLite3();
 
 
 	uint8_t *blobuf;
@@ -38,11 +38,11 @@ void DataProcessing::Report::CollectData() {
 		ctlbuf.RemoteEP = IPEndPoint(thissummarydb.Column(0), thissummarydb.ColumnBytes(0), thissummarydb.Column(1));
 		ctlbuf.Elapsed = thissummarydb.Column(2);
 		Farm0.Controllers.push_back(ctlbuf);
-		Farm0.MHS += thissummarydb.Column(3);
+		Farm0.MHS += (long double)thissummarydb.Column(3);
 	}
 
 	if (CollectPool) {
-		SQLite3 thispooldb = db_pool.OpenSQLite3();
+		SQLAutomator::SQLite3 thispooldb = db_pool.OpenSQLite3();
 
 		thispooldb.Prepare("SELECT URL, User, DifficultyAccepted FROM pool WHERE "
 					   "LENGTH(URL) > 7 AND "
@@ -57,8 +57,8 @@ void DataProcessing::Report::CollectData() {
 			thispooldb.Bind(3, ctl.RemoteEP.Port);
 
 			while (thispooldb.Step() == SQLITE_ROW) {
-				sbuf0 = thispooldb.Column(0);
-				sbuf1 = thispooldb.Column(1);
+				sbuf0 = thispooldb.Column(0).operator std::string();
+				sbuf1 = thispooldb.Column(1).operator std::string();
 				lubuf0 = thispooldb.Column(2);
 
 

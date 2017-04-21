@@ -13,7 +13,6 @@ namespace AMSD {
 
 	static set<string> TokenCache;
 	static shared_timed_mutex Lock;
-
 	static string LocalAdminToken;
 
 	struct UserInfo {

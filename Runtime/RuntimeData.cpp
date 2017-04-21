@@ -25,16 +25,17 @@ static uint8_t *RuntimeData_Memory = NULL;
 
 static const char Current_NVRAM_Version[] = "AMSD NVRAM REV 1.000";
 
+uint8_t *AMSD::RuntimeData::RuntimeData_Memory_Token = NULL;
+
 static uint8_t *RDM_OFFSET_NVRAM_Version;
 
 static uint8_t *RDM_OFFSET_TimeStamp_CurrentDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_LastDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_DBFirstDataCollection;
 
-string AMSD::RuntimeData::Path_RuntimeDir = "/var/lib/ams/";
 
 int AMSD::RuntimeData::Init() {
-	string shm_path = path_runtime + "NVRAM";
+	string shm_path = Config::Path_RuntimeDir + "/NVRAM";
 	RuntimeData_Memory = reimu_shm_open(shm_path, AMSD_NVRAM_SIZE*1024);
 	if (!RuntimeData_Memory)
 		return -2;
@@ -56,6 +57,25 @@ int AMSD::RuntimeData::Init() {
 	RDM_OFFSET_TimeStamp_CurrentDataCollection = RuntimeData_Memory + 128;
 	RDM_OFFSET_TimeStamp_LastDataCollection = RDM_OFFSET_TimeStamp_CurrentDataCollection + 8;
 	RDM_OFFSET_TimeStamp_DBFirstDataCollection = RDM_OFFSET_TimeStamp_LastDataCollection + 8;
+
+
+
+	shm_path = Config::Path_RuntimeDir + "/shm";
+
+
+	AMSD::RuntimeData::RuntimeData_Memory_Token = reimu_shm_open(shm_path, 8192, 1);
+
+	if (!AMSD::RuntimeData::RuntimeData_Memory_Token) {
+		fprintf(stderr,"amsd: reimu_shm_open() failed\n");
+		return 2;
+	}
+
+	fprintf(stderr,"amsd: 8KB shared memory at %p\n", (void *)AMSD::RuntimeData::RuntimeData_Memory_Token);
+
+	snprintf((char *)AMSD::RuntimeData::RuntimeData_Memory_Token, 256, "%s", AMSD::User::LocalAdminToken.c_str());
+
+
+
 
 	return 0;
 }

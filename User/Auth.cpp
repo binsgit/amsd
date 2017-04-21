@@ -4,9 +4,7 @@
 
 #include "User.hpp"
 
-string AMSD::User::LocalAdminToken = amsd_random_string();
-
-int User::Auth(string token, User *userinfo) {
+int AMSD::User::Auth(string token, User *userinfo) {
 	if (token == LocalAdminToken)
 		return 0;
 
@@ -18,7 +16,7 @@ int User::Auth(string token, User *userinfo) {
 	if (FoundInCache)
 		return 0;
 
-	SQLite3 userdb = db_user.OpenSQLite3();
+	SQLAutomator::SQLite3 userdb = db_user.OpenSQLite3();
 
 
 	userdb.Prepare("SELECT * FROM user WHERE Token = ?1");

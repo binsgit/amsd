@@ -18,7 +18,7 @@
 
 #include "Operations.hpp"
 
-static struct mController {
+struct mController {
     bool Dead = false;
     string IP;
     int Port = 0;
@@ -27,9 +27,9 @@ static struct mController {
     double TempSum = 0, TMaxSum = 0;
 };
 
-static struct dtCtx {
+struct dtCtx {
     time_t LastDataCollection;
-    pthread_mutex_t Lock;
+    pthread_mutex_t Lock = PTHREAD_MUTEX_INITIALIZER;
     map<string, mController> *ctls;
 };
 
@@ -53,9 +53,9 @@ static void *getModules(void *pctx) {
 
 			ctl->IP = thisEP.ToString(Reimu::IPEndPoint::String_IP);
 			ctl->Port = thisEP.Port;
-			ctl->GHS += thisdb.Column(2);
-			ctl->TempSum += thisdb.Column(3);
-			ctl->TMaxSum += thisdb.Column(4);
+			ctl->GHS += (double)thisdb.Column(2);
+			ctl->TempSum += (double)thisdb.Column(3);
+			ctl->TMaxSum += (double)thisdb.Column(4);
 			ctl->Mods++;
 		}
 	} catch (Reimu::Exception e) {

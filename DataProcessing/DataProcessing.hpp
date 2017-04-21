@@ -18,6 +18,7 @@ namespace AMSD {
 	class CgMinerAPI;
 	class Report;
 	class Issue;
+	class AvalonError;
 
 
 	class Collector {
@@ -131,34 +132,35 @@ namespace AMSD {
 	    bool CollectPool;
 	};
 
+	class AvalonError {
+	public:
+	    enum AvalonErrNum {
+		Idle = 1, CRCFailed = 2, NoFan = 4, Lock = 8, APIFIFOverflow = 16, RBOverflow = 32, TooHot = 64, HotBefore = 128,
+		LoopFailed = 256, CoreTestFailed = 512, InvaildPMU = 1024, PGFailed = 2048, NTCErr = 4096, VolErr = 8192,
+		VCoreErr = 16384, PMUCrcFailed = 32768, InvaildPLLValue = 65536,
+		Error_WU = 0x20000, Error_MW = 0x40000, Error_CRC = 0x80000, Error_DH = 0x100000
+	    };
+
+	    uint64_t ErrNum;
+	    uint16_t AUC, Module;
+	    uint8_t DNA[8] = {0};
+	    time_t Time;
+
+	    AvalonError();
+	    AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint64_t dna);
+	    AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint8_t dna[8]);
+	    AvalonError(vector<uint8_t> issue_desc);
+
+	    vector<uint8_t> Desc();
+
+	    static uint64_t DetectExtErrs(char *ver, double wu, double dh, uint32_t crc);
+	    static string ToString(uint64_t ErrNum);
+	    string ToString();
+
+	};
+
 	class Issue {
 	public:
-	    class AvalonError {
-	    public:
-		enum AvalonErrNum {
-		    Idle = 1, CRCFailed = 2, NoFan = 4, Lock = 8, APIFIFOverflow = 16, RBOverflow = 32, TooHot = 64, HotBefore = 128,
-		    LoopFailed = 256, CoreTestFailed = 512, InvaildPMU = 1024, PGFailed = 2048, NTCErr = 4096, VolErr = 8192,
-		    VCoreErr = 16384, PMUCrcFailed = 32768, InvaildPLLValue = 65536,
-		    Error_WU = 0x20000, Error_MW = 0x40000, Error_CRC = 0x80000, Error_DH = 0x100000
-		};
-
-		uint64_t ErrNum;
-		uint16_t AUC, Module;
-		uint8_t DNA[8] = {0};
-		time_t Time;
-
-		AvalonError();
-		AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint64_t dna);
-		AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint8_t dna[8]);
-		AvalonError(vector<uint8_t> issue_desc);
-
-		vector<uint8_t> Desc();
-
-		static uint64_t DetectExtErrs(char *ver, double wu, double dh, uint32_t crc);
-		static string ToString(uint64_t ErrNum);
-		string ToString();
-
-	    };
 
 	    enum IssueType {
 		Unknown = 0,
@@ -171,13 +173,15 @@ namespace AMSD {
 
 	    Reimu::IPEndPoint RemoteEP;
 
-	    void *Error_Avalon = NULL;
+	    DataProcessing::AvalonError *Error_Avalon = NULL;
 
 	    Issue();
 	    Issue(time_t time_now, IssueType type, Reimu::IPEndPoint remoteEP);
 	    Issue(time_t time_now, Reimu::IPEndPoint remoteEP, uint64_t errnum, uint16_t AUC, uint16_t Module, uint64_t DNA);
 
 	    ~Issue();
+
+	    static const char *ToString(uint64_t errNum);
 
 	    void WriteDatabase(Reimu::SQLAutomator::SQLite3 *db);
 

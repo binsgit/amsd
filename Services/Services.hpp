@@ -7,10 +7,12 @@
 
 #include "../amsd.hpp"
 
+using namespace std;
+
 namespace AMSD {
     class Services {
     public:
-	static map<string, Reimu::Tasker> Services;
+	static map<string, Reimu::Tasker> ServicesList;
 
 	static int Init();
 

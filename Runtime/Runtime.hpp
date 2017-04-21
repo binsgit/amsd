@@ -22,9 +22,7 @@ namespace AMSD {
     class RuntimeData {
     public:
 	static int Init();
-
-	static string Path_RuntimeDir;
-	static string Path_ConfigDir;
+	static uint8_t *RuntimeData_Memory_Token;
 
 	class TimeStamp {
 	public:
@@ -38,11 +36,13 @@ namespace AMSD {
 
     class Config {
     public:
-	static shared_timed_mutex Lock;
+
+	static string Path_RuntimeDir;
+	static string Path_ConfigDir;
 
 	static void Init();
-	static int Load(string filename);
-	static int Save(string filename);
+	static int Load();
+	static int Save();
 
     };
 }

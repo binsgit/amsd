@@ -4,21 +4,31 @@
 
 #include "Runtime.hpp"
 
-map<string, map<string, string>> Config;
+using namespace std;
+map<string, map<string, string>> ConfigList;
 static json_t *j_cfg = NULL;
 static json_t *j_newcfg, *j_newcfg_section;
 
+shared_timed_mutex Lock_Config;
+
+
+string AMSD::Config::Path_RuntimeDir = "/var/lib/ams";
+string AMSD::Config::Path_ConfigDir = "/etc/ams";
+
+
 void AMSD::Config::Init() {
-	Config["Farm"]["Name"] = "Miku's Farm";
-	Config["Farm"]["Description"] = "喵喵喵喵喵";
+	ConfigList["Farm"]["Name"] = "Miku's Farm";
+	ConfigList["Farm"]["Description"] = "喵喵喵喵喵";
 
-	Config["API_Unix"]["Enabled"] = "1";
+	ConfigList["API_Unix"]["Enabled"] = "1";
 
-	Config["API_TCP"]["Enabled"] = "0";
-	Config["API_TCP6"]["Enabled"] = "0";
+	ConfigList["API_TCP"]["Enabled"] = "0";
+	ConfigList["API_TCP6"]["Enabled"] = "0";
 
-	Config["DataCollector"]["ConnTimeout"] = "30";
-	Config["DataCollector"]["CollectInterval"] = "600";
+	ConfigList["DataCollector"]["ConnTimeout"] = "30";
+	ConfigList["DataCollector"]["CollectInterval"] = "600";
+
+	ConfigList["Path"]["Runtime"] = "/var/lib/ams";
 
 	/*
 	 * SMTP STARTTLS isn't supported in this version due to a security flaw: Plaintext communication with the server
@@ -27,18 +37,20 @@ void AMSD::Config::Init() {
 	 * P.S: I'm not a paranoid personality disorder patient!! :P
 	 */
 
-	Config["MailReport"]["SMTP_Use_SSL"] = "true";
-	Config["MailReport"]["SMTP_Server"] = "smtp.google.com";
-	Config["MailReport"]["SMTP_Port"] = "465";
-	Config["MailReport"]["SMTP_User"] = "reimu@gensokyo.moe";
-	Config["MailReport"]["SMTP_Password"] = "bakacirno233";
+	ConfigList["MailReport"]["SMTP_Use_SSL"] = "true";
+	ConfigList["MailReport"]["SMTP_Server"] = "smtp.google.com";
+	ConfigList["MailReport"]["SMTP_Port"] = "465";
+	ConfigList["MailReport"]["SMTP_User"] = "reimu@gensokyo.moe";
+	ConfigList["MailReport"]["SMTP_Password"] = "bakacirno233";
 
-	Config["MailReport"]["Mail_From"] = "reimu@gensokyo.moe";
-	Config["MailReport"]["Mail_To"] = "marisa@gensokyo.moe,flandre@gensokyo.moe";
+	ConfigList["MailReport"]["Mail_From"] = "reimu@gensokyo.moe";
+	ConfigList["MailReport"]["Mail_To"] = "marisa@gensokyo.moe,flandre@gensokyo.moe";
 }
 
-int AMSD::Config::Load(string filename) {
+int AMSD::Config::Load() {
 	int ret = 0;
+
+	string filename = AMSD::Config::Path_ConfigDir + "/config";
 
 	if (j_cfg)
 		return -1;
@@ -50,7 +62,7 @@ int AMSD::Config::Load(string filename) {
 
 	if (!j_cfg) {
 		Init();
-		Save(filename.c_str());
+		Save();
 		cerr << "\n\nNo config file found. Generated an example at " << filename << ".\n"
 		     << "Please edit it to reflect your configuration and restart me.\n";
 		return 1;
@@ -62,12 +74,15 @@ int AMSD::Config::Load(string filename) {
 			if (json_is_object(value_l1))
 				json_object_foreach(value_l1, key_l2, value_l2) {
 					if (json_is_string(value_l2)) {
-						Config[key_l1][key_l2] = json_string_value(value_l2);
+						ConfigList[key_l1][key_l2] = json_string_value(value_l2);
 						fprintf(stderr, "Config[%s][%s] = %s\n", key_l1, key_l2,
 							json_string_value(value_l2));
 					}
 				}
 		}
+
+		AMSD::Config::Path_RuntimeDir = ConfigList["Path"]["Runtime"];
+
 	}
 
 	Lock_Config.unlock();
@@ -75,13 +90,15 @@ int AMSD::Config::Load(string filename) {
 	return ret;
 }
 
-int AMSD::Config::Save(string filename) {
+int AMSD::Config::Save() {
 
-	Lock.lock();
+	string filename = AMSD::Config::Path_ConfigDir + "/config";
+
+	Lock_Config.lock();
 
 	j_newcfg = json_object();
 
-	for (auto target_l1 = Config.begin(); target_l1 != Config.end(); ++target_l1) {
+	for (auto target_l1 = ConfigList.begin(); target_l1 != ConfigList.end(); ++target_l1) {
 
 		j_newcfg_section = json_object();
 
@@ -96,7 +113,7 @@ int AMSD::Config::Save(string filename) {
 	int ret = json_dump_file(j_newcfg, filename.c_str(), JSON_INDENT(4));
 	json_decref(j_newcfg);
 
-	Lock.unlock();
+	Lock_Config.unlock();
 
 	return ret;
 }

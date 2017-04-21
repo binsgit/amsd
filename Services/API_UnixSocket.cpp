@@ -7,7 +7,7 @@
 string socket_path = "/tmp/.amsd_socket";
 
 
-void Services::API::UnixSocket(void *userp) {
+void AMSD::Services::API::UnixSocket(void *userp) {
 	/*
 	 * We are not using an event-based loop because this implementation still needs one thread per conn to
 	 * process a significant amount of data without letting the client wait for a long time. Also, in my opinion,
@@ -50,7 +50,7 @@ void Services::API::UnixSocket(void *userp) {
 
 		fprintf(stderr, "amsd: server: new connection, fd %d\n", fd_client);
 
-		ConCtx *newctx = (ConCtx *)calloc(1, sizeof(struct amsd_si_ctx));
+		ConCtx *newctx = (ConCtx *)calloc(1, sizeof(struct ConCtx));
 		newctx->fd = fd_client;
 
 		pthread_create(&newctx->tid, &_pthread_detached, ConnectionThread, newctx);

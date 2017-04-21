@@ -19,6 +19,6 @@
 #include "Operations.hpp"
 
 int AMSD::Operations::mailreport(json_t *in_data, json_t *&out_data){
-	amsd_report_mail();
+	Services::MailReport(NULL);
 	return 0;
 }

@@ -23,7 +23,7 @@ Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_de
 
 int AMSD::Database::Init() {
 	db_controller.TableName = "controller";
-	db_controller.DatabaseURI = path_runtime + db_controller.TableName + ".db";
+	db_controller.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_controller.TableName + ".db";
 	db_controller.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(Addr, Port) ON CONFLICT IGNORE");
 	db_controller.InsertColumns({{"Time", INTEGER},
 				     {"Addr", BLOB},
@@ -31,7 +31,7 @@ int AMSD::Database::Init() {
 				     {"Type", INTEGER}});
 
 	db_user.TableName = "user";
-	db_user.DatabaseURI = path_runtime + db_user.TableName + ".db";
+	db_user.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_user.TableName + ".db";
 	db_user.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(UserName) ON CONFLICT ABORT");
 	db_user.InsertColumns({{"UID", INTEGER|PRIMARY_KEY|AUTOINCREMENT|NOT_NULL},
 			       {"UserType", INTEGER},
@@ -47,7 +47,7 @@ int AMSD::Database::Init() {
 
 
 	db_issue.TableName = "issue";
-	db_issue.DatabaseURI = path_runtime + db_issue.TableName + ".db";
+	db_issue.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_issue.TableName + ".db";
 	db_issue.InsertColumns({{"Time", INTEGER},
 				{"Addr", BLOB},
 				{"Port", INTEGER},
@@ -55,13 +55,13 @@ int AMSD::Database::Init() {
 				{"Issue", BLOB}});
 
 	db_module_policy.TableName = "module_policy";
-	db_module_policy.DatabaseURI = path_runtime + db_module_policy.TableName + ".db";
+	db_module_policy.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_module_policy.TableName + ".db";
 	db_module_policy.InsertColumns({{"MTime", INTEGER},
 				{"DNA", BLOB},
 				{"Policy", BLOB}});
 
 	db_summary.TableName = "summary";
-	db_summary.DatabaseURI = path_runtime + db_summary.TableName + ".db";
+	db_summary.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_summary.TableName + ".db";
 	db_summary.InsertColumns({{"Time", INTEGER},
 				  {"Addr", BLOB},
 				  {"Port", INTEGER},
@@ -97,7 +97,7 @@ int AMSD::Database::Init() {
 
 
 	db_pool.TableName = "pool";
-	db_pool.DatabaseURI = path_runtime + db_pool.TableName + ".db";
+	db_pool.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_pool.TableName + ".db";
 	db_pool.InsertColumns({{"Time", INTEGER},
 			       {"Addr", BLOB},
 			       {"Port", INTEGER},
@@ -139,7 +139,7 @@ int AMSD::Database::Init() {
 
 
 	db_device.TableName = "device";
-	db_device.DatabaseURI = path_runtime + db_device.TableName + ".db";
+	db_device.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_device.TableName + ".db";
 	db_device.InsertColumns({{"Time", INTEGER},
 				 {"Addr", BLOB},
 				 {"Port", INTEGER},
@@ -172,7 +172,7 @@ int AMSD::Database::Init() {
 				 {"DeviceElapsed", INTEGER}});
 
 	db_module_avalon7.TableName = "module_avalon7";
-	db_module_avalon7.DatabaseURI = path_runtime + db_module_avalon7.TableName + ".db";
+	db_module_avalon7.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_module_avalon7.TableName + ".db";
 	db_module_avalon7.InsertColumns({{"Time", INTEGER},
 					 {"Addr", BLOB},
 					 {"Port", INTEGER},
@@ -305,7 +305,7 @@ int AMSD::Database::Init() {
 
 		} catch (Reimu::Exception e) {
 			fprintf(stderr, "amsd: database: failed to open/initialize database %s: %s\n",
-				thisdb->TableName, e.ToString().c_str());
+				thisdb->TableName.c_str(), e.ToString().c_str());
 			return -1;
 		}
 

@@ -30,7 +30,7 @@ int AMSD::Operations::login(json_t *in_data, json_t *&out_data){
 	string user = string(json_string_value(j_user));
 	string passwd = string(json_string_value(j_passwd));
 
-	int login_status = amsd_user_login(user, passwd, token);
+	int login_status = User::Login(user, passwd, token);
 
 	if (login_status)
 		return -2;

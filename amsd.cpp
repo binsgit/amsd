@@ -24,14 +24,12 @@ uint8_t *amsd_shm = NULL;
 
 unordered_map<string, vector<string>> api_parser_v2(char *crap);
 
+using namespace AMSD;
+
 int main() {
 
 	fprintf(stderr, "Avalon Management System Daemon v%.2f - Get things done rapidly!\n", AMSD_VERSION);
 
-	mkdir("/etc/ams/", 0755);
-	mkdir(path_runtime.c_str(), 0755);
-
-	amsd_load_config();
 
 	signal(SIGPIPE, SIG_IGN);
 	pthread_attr_init(&_pthread_detached);
@@ -45,6 +43,10 @@ int main() {
 	sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
 	sqlite3_initialize();
 
+	if (Config::Load() != 0) {
+		fprintf(stderr,"amsd: Config::Load() failed\n");
+		return 2;
+	}
 
 	if (Database::Init() != 0) {
 		fprintf(stderr,"amsd: Database::Init() failed\n");
@@ -60,23 +62,6 @@ int main() {
 		fprintf(stderr,"amsd: RuntimeData::Init() failed\n");
 		return 2;
 	}
-
-
-	string shm_path = path_runtime + "shm";
-
-
-	amsd_shm = reimu_shm_open(shm_path, 8192, 1);
-
-	if (!amsd_shm) {
-		fprintf(stderr,"amsd: reimu_shm_open() failed\n");
-		return 2;
-	}
-
-	fprintf(stderr,"amsd: 8KB shared memory at %p\n", (void *)amsd_shm);
-
-	snprintf((char *)amsd_shm, 256, "%s", amsd_local_superuser_token.c_str());
-
-
 
 	cerr << "Remember: Too many rules will ONLY make people STUPID. - Author\n";
 

@@ -4,6 +4,6 @@
 
 #include "Services.hpp"
 
-void Services::DataCollector(void *userp) {
+void AMSD::Services::DataCollector(void *userp) {
 	cerr << "amsd: Services::DataCollector fired\n";
 }

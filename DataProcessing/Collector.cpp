@@ -10,7 +10,7 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 	CgMinerAPI *apiProcessor = con_ctx->thisAPIProcessor;
 
 	if (events & BEV_EVENT_CONNECTED) {
-		fprintf(stderr,"amsd: Collector: %s (%p) connected\n", apiProcessor->RemoteEP.ToString(), bev);
+		fprintf(stderr,"amsd: Collector: %s (%p) connected\n", apiProcessor->RemoteEP.ToString().c_str(), bev);
 
 		if (!apiProcessor->UserData) {
 			string cmdstr = apiProcessor->QueryString();
@@ -32,14 +32,14 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 								apiProcessor->RemoteEP);
 				thisIssue.WriteDatabase(apiProcessor->IssueDB);
 				fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
-					apiProcessor->RemoteEP.ToString(), bev, events, apiProcessor->RawAPIData.size());
+					apiProcessor->RemoteEP.ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
 			} else if (events & BEV_EVENT_TIMEOUT) {
 				DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
 								DataProcessing::Issue::ConnectionTimeout,
 								apiProcessor->RemoteEP);
 				thisIssue.WriteDatabase(apiProcessor->IssueDB);
 				fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
-					apiProcessor->RemoteEP.ToString(), bev, con_ctx->thisCollector->TimeOut.tv_sec,
+					apiProcessor->RemoteEP.ToString().c_str(), bev, con_ctx->thisCollector->TimeOut.tv_sec,
 					con_ctx->thisCollector->TimeOut.tv_usec, events, apiProcessor->RawAPIData.size());
 			}
 

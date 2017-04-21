@@ -67,6 +67,8 @@
 #include "compatibility.hpp"
 
 #include "Runtime/Runtime.hpp"
+#include "Services/Services.hpp"
+#include "User/User.hpp"
 #include "Operations/Operations.hpp"
 #include "DataProcessing/DataProcessing.hpp"
 
@@ -80,11 +82,6 @@
 using namespace std;
 using namespace AMSD;
 
-
-
-
-
-
 enum GeneralStatus {
     Uninitialized = 0,
     Connecting = 0x11, Connected = 0x12,
@@ -93,13 +90,10 @@ enum GeneralStatus {
     Finished = 0x101
 };
 
-class User;
-class MMUpgrade;
 class SSHConnection;
 class SuperRTACSession;
 
-extern string path_runtime;
-extern map<string, map<string, string>> Config;
+extern map<string, map<string, string>> ConfigList;
 extern pthread_attr_t _pthread_detached;
 
 extern time_t Timestamp_LastFinishedCollection;
@@ -107,21 +101,8 @@ extern time_t Timestamp_LastFinishedCollection;
 extern shared_timed_mutex Lock_DataCollector;
 extern shared_timed_mutex Lock_Config;
 
-
-
 extern string amsd_local_superuser_token;
 
-// Server
-extern int amsd_server();
-
-// Core
-
-// Config
-extern int amsd_save_config(const char *filename="/etc/ams/config.json", bool nolock=false);
-extern int amsd_load_config(const char *filename="/etc/ams/config.json");
-
-// Database
-extern int amsd_db_init();
 
 // Utils
 extern char *strrnchr(char *s, int c, size_t len, size_t n);
@@ -139,12 +120,6 @@ extern uint64_t bindna2int(void *dna);
 extern string strbindna(void *dna);
 extern bool isOperationNoAuthPermitted(void *func);
 
-// User
-extern int amsd_user_login(string user, string passwd, string &token);
-extern int amsd_user_auth(string token, User *userinfo);
-
-// Request
-extern int amsd_request_parse(char *inputstr, string &outputstr);
 
 class SSHConnection {
 private:

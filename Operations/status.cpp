@@ -18,7 +18,7 @@
 
 #include "Operations.hpp"
 
-static struct stCtx {
+struct stCtx {
     Reimu::IPEndPoint *remoteEP;
     time_t LastDataCollection;
     json_t *j_summary;
@@ -63,7 +63,7 @@ static void *getPool(void *userp){
 		thisCtx->j_pools = json_array();
 		json_t *j_pool;
 
-		SQLAutomator::SQLite3 thisdb = db_summary.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = db_pool.OpenSQLite3();
 		thisdb.Prepare("SELECT PoolID, URL, StratumActive, User, Status, GetWorks, Accepted, Rejected, Stale, "
 				       "LastShareTime, LastShareDifficulty FROM pool WHERE Time = ?1 "
 				       "AND Addr = ?2 AND Port = ?3");
@@ -100,7 +100,7 @@ static void *getDevice(void *userp){
 	try {
 		stCtx *thisCtx = (stCtx *) userp;
 		json_t *j_device;
-		SQLAutomator::SQLite3 thisdb = db_summary.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = db_device.OpenSQLite3();
 		thisdb.Prepare("SELECT ASC, Name, ID, Enabled, Status, Temperature, MHSav, MHS5s, MHS1m, MHS5m, MHS15m, "
 				       "LastValidWork FROM device WHERE Time = ?1 "
 				       "AND Addr = ?2 AND Port = ?3");
@@ -164,11 +164,11 @@ static void *getModule(void *userp){
 			json_object_set_new(j_module, "Elapsed", json_integer(thisdb.Column(3)));
 			json_object_set_new(j_module, "Ver", json_string(thisdb.Column(4)));
 
+			Reimu::UniversalType *dna = thisdb.Column(5);
 
-			uint64_t *dna = (uint64_t *)thisdb.Column(5);
 			char sbuf[32] = {0};
-			if (dna)
-				snprintf(sbuf, 31, "%016" PRIx64, *dna);
+			if (dna->Size() == 8)
+				snprintf(sbuf, 31, "%016" PRIx64, dna->operator uint64_t());
 
 			json_object_set_new(j_module, "DNA", json_string(sbuf));
 			json_object_set_new(j_module, "LW", json_integer(thisdb.Column(6)));

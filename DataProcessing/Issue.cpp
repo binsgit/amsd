@@ -21,7 +21,7 @@ DataProcessing::Issue::Issue(time_t time_now, Reimu::IPEndPoint remoteEP, uint64
 	Type = AvalonError;
 	RemoteEP = remoteEP;
 
-	Error_Avalon = new AvalonError(errnum, AUC, Module, DNA);
+	Error_Avalon = new DataProcessing::AvalonError(errnum, AUC, Module, DNA);
 }
 
 DataProcessing::Issue::~Issue() {
@@ -36,7 +36,7 @@ void DataProcessing::Issue::WriteDatabase(Reimu::SQLAutomator::SQLite3 *db) {
 	db->Bind(1, Time);
 	db->Bind(2, {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16});
 	db->Bind(3, RemoteEP.Port);
-	db->Bind(4, Type);
+	db->Bind(4, (int)Type);
 
 	if (Type == AvalonError) {
 		vector<uint8_t> descbuf = Error_Avalon->Desc();
@@ -44,5 +44,16 @@ void DataProcessing::Issue::WriteDatabase(Reimu::SQLAutomator::SQLite3 *db) {
 	}
 
 	db->Step();
+}
+
+const char *DataProcessing::Issue::ToString(uint64_t errNum) {
+	const char *ret = "";
+
+	if (errNum == IssueType::ConnectionFailure)
+		ret = "连接失败";
+	else if (errNum == IssueType::ConnectionTimeout)
+		ret = "连接超时";
+
+	return ret;
 }
 

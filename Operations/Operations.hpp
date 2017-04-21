@@ -7,6 +7,9 @@
 
 #include "../amsd.hpp"
 
+using namespace std;
+
+
 namespace AMSD {
     class Operations : Reimu::SQLAutomator, Reimu::SQLAutomator::SQLite3 {
     public:

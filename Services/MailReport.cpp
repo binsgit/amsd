@@ -4,7 +4,7 @@
 
 #include "Services.hpp"
 
-void Services::MailReport(void *userp) {
+void AMSD::Services::MailReport(void *userp) {
 	cerr << "amsd: Services::MailReport fired\n";
 }
 

@@ -4,14 +4,14 @@
 
 #include "DataProcessing.hpp"
 
-DataProcessing::Issue::AvalonError::AvalonError() {
+DataProcessing::AvalonError::AvalonError() {
 	ErrNum = 0;
 	AUC = 0;
 	Module = 0;
 	Time = 0;
 }
 
-DataProcessing::Issue::AvalonError::AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint64_t dna) {
+DataProcessing::AvalonError::AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint64_t dna) {
 	ErrNum = errnum;
 	AUC = auc;
 	Module = module;
@@ -23,14 +23,14 @@ DataProcessing::Issue::AvalonError::AvalonError(uint64_t errnum, uint16_t auc, u
 	memcpy(DNA, &dna, 8);
 }
 
-DataProcessing::Issue::AvalonError::AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint8_t *dna) {
+DataProcessing::AvalonError::AvalonError(uint64_t errnum, uint16_t auc, uint16_t module, uint8_t *dna) {
 	ErrNum = errnum;
 	AUC = auc;
 	Module = module;
 	memcpy(DNA, dna, 8);
 }
 
-DataProcessing::Issue::AvalonError::AvalonError(vector<uint8_t> issue_desc) {
+DataProcessing::AvalonError::AvalonError(vector<uint8_t> issue_desc) {
 	/*
 	 * issue_desc for AvalonError
 	 * +---------+---------+---------+---------+
@@ -59,7 +59,7 @@ DataProcessing::Issue::AvalonError::AvalonError(vector<uint8_t> issue_desc) {
 	ErrNum = le64toh(ErrNum);
 }
 
-vector<uint8_t> DataProcessing::Issue::AvalonError::Desc() {
+vector<uint8_t> DataProcessing::AvalonError::Desc() {
 	vector<uint8_t> ret;
 
 	ret.reserve(20);
@@ -74,7 +74,7 @@ vector<uint8_t> DataProcessing::Issue::AvalonError::Desc() {
 	return ret;
 }
 
-uint64_t DataProcessing::Issue::AvalonError::DetectExtErrs(char *ver, double wu, double dh, uint32_t crc) {
+uint64_t DataProcessing::AvalonError::DetectExtErrs(char *ver, double wu, double dh, uint32_t crc) {
 	uint64_t ret = 0;
 	char vbuf[4];
 
@@ -99,7 +99,7 @@ uint64_t DataProcessing::Issue::AvalonError::DetectExtErrs(char *ver, double wu,
 	return ret;
 }
 
-string DataProcessing::Issue::AvalonError::ToString(uint64_t ErrNum) {
+string DataProcessing::AvalonError::ToString(uint64_t ErrNum) {
 	string errstr = "";
 
 	if (ErrNum & Idle)
@@ -165,6 +165,6 @@ string DataProcessing::Issue::AvalonError::ToString(uint64_t ErrNum) {
 	return errstr;
 }
 
-string DataProcessing::Issue::AvalonError::ToString() {
+string DataProcessing::AvalonError::ToString() {
 	return ToString(ErrNum);
 }
