@@ -35,6 +35,10 @@ static uint8_t *RDM_OFFSET_TimeStamp_DBFirstDataCollection;
 
 
 int AMSD::RuntimeData::Init() {
+	if (!Reimu::FileSystem::Exist(Config::Path_RuntimeDir)) {
+		cerr << "amsd: RuntimeData::Init: error: faile to open directory " << Config::Path_RuntimeDir << "\n";
+		return -1;
+	}
 	string shm_path = Config::Path_RuntimeDir + "/NVRAM";
 	RuntimeData_Memory = reimu_shm_open(shm_path, AMSD_NVRAM_SIZE*1024);
 	if (!RuntimeData_Memory)

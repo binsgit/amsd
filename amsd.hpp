@@ -60,9 +60,11 @@
 #include <event2/bufferevent.h>
 
 #include <libReimu/Tasker/Tasker.hpp>
+#include <libReimu/ProgramOptions/ProgramOptions.hpp>
 #include <libReimu/UniversalType/UniversalType.hpp>
 #include <libReimu/IPEndPoint/IPEndPoint.hpp>
 #include <libReimu/SQLAutomator/SQLAutomator.hpp>
+#include <libReimu/FileSystem/FileSystem.hpp>
 
 #include "compatibility.hpp"
 
@@ -71,6 +73,7 @@
 #include "User/User.hpp"
 #include "Operations/Operations.hpp"
 #include "DataProcessing/DataProcessing.hpp"
+
 
 
 #include "lib/rfc1342.hpp"

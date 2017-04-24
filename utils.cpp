@@ -110,8 +110,6 @@ uint8_t *reimu_shm_open(string path, size_t size, bool trunc){
 
 	close(shm_fd);
 
-	fprintf(stderr,"amsd: reimu_shm_open: %zu bytes shared memory at %p\n", size, (void *)shm_ret);
-
 	return shm_ret;
 }
 

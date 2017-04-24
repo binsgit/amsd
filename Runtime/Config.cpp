@@ -52,19 +52,19 @@ int AMSD::Config::Load() {
 
 	string filename = AMSD::Config::Path_ConfigDir + "/config";
 
+
+
 	if (j_cfg)
 		return -1;
 
 	json_error_t err;
 
 	Lock_Config.lock();
+
 	j_cfg = json_load_file(filename.c_str(), 0, &err);
 
 	if (!j_cfg) {
-		Init();
-		Save();
-		cerr << "\n\nNo config file found. Generated an example at " << filename << ".\n"
-		     << "Please edit it to reflect your configuration and restart me.\n";
+		cerr << "amsd: Config::Load: error: Failed to open config in " << AMSD::Config::Path_ConfigDir << endl;
 		return 1;
 	} else {
 		const char *key_l1, *key_l2;
@@ -111,6 +111,8 @@ int AMSD::Config::Save() {
 
 
 	int ret = json_dump_file(j_newcfg, filename.c_str(), JSON_INDENT(4));
+	if (ret != 0)
+		cerr << "amsd: Config::Save: error: Failed to save config to " << AMSD::Config::Path_ConfigDir << endl;
 	json_decref(j_newcfg);
 
 	Lock_Config.unlock();

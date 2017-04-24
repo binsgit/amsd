@@ -22,11 +22,20 @@ pthread_attr_t _pthread_detached;
 
 uint8_t *amsd_shm = NULL;
 
-unordered_map<string, vector<string>> api_parser_v2(char *crap);
-
 using namespace AMSD;
 
-int main() {
+void ShowHelp() {
+	fprintf(stderr, ""
+		"Usage: amsd [-c <config_dir>] [-g <config_dir>] [-h|--help]\n"
+		"\n"
+		"Options:\n"
+		"    -c        Override default configuration directory (/etc/ams)\n"
+		"    -g        Generate example configuration file(s) in given directory\n"
+		"    -h        Show this help\n"
+		"");
+}
+
+int main(int argc, char **argv) {
 
 	fprintf(stderr, "Avalon Management System Daemon v%.2f - Get things done rapidly!\n", AMSD_VERSION);
 
@@ -36,12 +45,39 @@ int main() {
 	pthread_attr_setdetachstate(&_pthread_detached, PTHREAD_CREATE_DETACHED);
 
 	if (libssh2_init(0) != 0) {
-		fprintf (stderr, "amsd: Fatal: libssh2 initialization failed!!\n");
+		fprintf(stderr, "amsd: Fatal: libssh2 initialization failed!!\n");
 		exit(2);
 	}
 
 	sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
 	sqlite3_initialize();
+
+	Reimu::ProgramOptions po(argc, argv);
+
+	if (po.Flag("h") || po.Flag("help")) {
+		ShowHelp();
+		exit(0);
+	}
+
+	char *arg_cfgpath = po.OptArg("c");
+
+	if (arg_cfgpath)
+		AMSD::Config::Path_ConfigDir = arg_cfgpath;
+
+	char *arg_gencfgpath = po.OptArg("g");
+
+	if (arg_gencfgpath) {
+		AMSD::Config::Path_ConfigDir = arg_gencfgpath;
+		AMSD::Config::Init();
+		if (AMSD::Config::Save() != 0) {
+			cerr << "amsd: Failed to generate example configuration file(s) in " << arg_gencfgpath << endl;
+			exit(1);
+		} else {
+			cerr << "amsd: Generated example configuration file(s) in " << arg_gencfgpath << endl;
+			exit(0);
+		}
+	}
+
 
 	if (Config::Load() != 0) {
 		fprintf(stderr,"amsd: Config::Load() failed\n");
@@ -60,6 +96,11 @@ int main() {
 
 	if (RuntimeData::Init() != 0){
 		fprintf(stderr,"amsd: RuntimeData::Init() failed\n");
+		return 2;
+	}
+
+	if (Services::Init() != 0){
+		fprintf(stderr,"amsd: Services::Init() failed\n");
 		return 2;
 	}
 
