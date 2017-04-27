@@ -31,7 +31,7 @@ DataProcessing::Issue::~Issue() {
 
 void DataProcessing::Issue::WriteDatabase(Reimu::SQLAutomator::SQLite3 *db) {
 
-	db->Prepare(db_issue.Statement(Reimu::SQLAutomator::INSERT_INTO));
+	db->Prepare(db_issue.Statement(Reimu::SQLAutomator::INSERT_INTO|Reimu::SQLAutomator::SqlitePrepared));
 
 	db->Bind(1, Time);
 	db->Bind(2, {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16});

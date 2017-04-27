@@ -34,7 +34,7 @@ static void *getAvalonErrors(void *userp){
 	uint32_t ECHU[4];
 
 	try {
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Addr, Port, DeviceID, ModuleID, CRC_0, CRC_1, CRC_2, CRC_3, "
 				       "ECHU_0, ECHU_1, ECHU_2, ECHU_3, Ver, WU, DH, DNA "
@@ -109,7 +109,7 @@ static void *getOtherErrors(void *userp){
 	uint32_t ECHU[4];
 
 	try {
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Addr, Port, Type FROM issue WHERE Time = ?1 AND Type >= 0x10 AND Type < 0x20");
 

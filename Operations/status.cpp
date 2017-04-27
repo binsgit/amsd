@@ -33,7 +33,7 @@ static void *getSummary(void *userp){
 
 		thisCtx->j_summary = json_object();
 
-		SQLAutomator::SQLite3 thisdb = db_summary.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_summary.OpenSQLite3();
 		thisdb.Prepare("SELECT Elapsed, MHSav, Accepted, Rejected, NetworkBlocks, BestShare FROM summary "
 				       "WHERE Time = ?1 AND Addr = ?2 AND Port = ?3");
 		thisdb.Bind(1, thisCtx->LastDataCollection);
@@ -63,7 +63,7 @@ static void *getPool(void *userp){
 		thisCtx->j_pools = json_array();
 		json_t *j_pool;
 
-		SQLAutomator::SQLite3 thisdb = db_pool.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_pool.OpenSQLite3();
 		thisdb.Prepare("SELECT PoolID, URL, StratumActive, User, Status, GetWorks, Accepted, Rejected, Stale, "
 				       "LastShareTime, LastShareDifficulty FROM pool WHERE Time = ?1 "
 				       "AND Addr = ?2 AND Port = ?3");
@@ -100,7 +100,7 @@ static void *getDevice(void *userp){
 	try {
 		stCtx *thisCtx = (stCtx *) userp;
 		json_t *j_device;
-		SQLAutomator::SQLite3 thisdb = db_device.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_device.OpenSQLite3();
 		thisdb.Prepare("SELECT ASC, Name, ID, Enabled, Status, Temperature, MHSav, MHS5s, MHS1m, MHS5m, MHS15m, "
 				       "LastValidWork FROM device WHERE Time = ?1 "
 				       "AND Addr = ?2 AND Port = ?3");
@@ -142,7 +142,7 @@ static void *getModule(void *userp){
 		stCtx *thisCtx = (stCtx *) userp;
 		json_t *j_module, *j_echu;
 		int devid, modid;
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 		thisdb.Prepare("SELECT DeviceID, ModuleID, LED, Elapsed, Ver, DNA, LW, DH, GHSmm, WU, Temp, TMax, Fan, "
 				       "FanR, PG, ECHU_0, ECHU_1, ECHU_2, ECHU_3, ECMM FROM module_avalon7 WHERE "
 				       "Time = ?1 AND Addr = ?2 AND Port = ?3");

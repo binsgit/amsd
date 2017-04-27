@@ -187,8 +187,10 @@ void DataProcessing::CgMinerAPI::Process() {
 
 	json_error_t j_err;
 
-	if (!(JsonAPIData = json_loadb((const char *)&RawAPIData[0], RawAPIData.size(), 0, &j_err))) {
+	if (!(JsonAPIData = json_loads((const char *)&RawAPIData[0], 0, &j_err))) {
 		Reimu::Exception e(&j_err);
+
+		cerr << "\n" << (const char *)&RawAPIData[0] << "\n";
 
 		fprintf(stderr, "amsd: CgMinerAPI: error processing %s for %s: json error: %s\n", ToString(Type),
 			RemoteEP.ToString().c_str(), e.what().c_str());
@@ -198,15 +200,18 @@ void DataProcessing::CgMinerAPI::Process() {
 
 	switch (Type) {
 		case Summary:
+			DestDB->Prepare(db_summary.Statement(Reimu::SQLAutomator::INSERT_INTO|Reimu::SQLAutomator::SqlitePrepared));
 			ParseAPIData("SUMMARY", JsonKeys_Summary);
 			break;
 		case EStats:
 			ParseCrap(); // The API output is NOT easy to parse nor easy to read!!!
 			break;
 		case EDevs:
+			DestDB->Prepare(db_device.Statement(Reimu::SQLAutomator::INSERT_INTO|Reimu::SQLAutomator::SqlitePrepared));
 			ParseAPIData("DEVS", JsonKeys_Device);
 			break;
 		case Pools:
+			DestDB->Prepare(db_pool.Statement(Reimu::SQLAutomator::INSERT_INTO|Reimu::SQLAutomator::SqlitePrepared));
 			ParseAPIData("POOLS", JsonKeys_Pool);
 			break;
 	}
@@ -234,6 +239,7 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			continue;
 		}
 
+		json_t *j_dev_id = json_object_get(j_apidata, "STATS");
 		json_t *j_mm_count = json_object_get(j_apidata, "MM Count");
 
 		if (!json_is_integer(j_mm_count)) {
@@ -241,6 +247,7 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			continue;
 		}
 
+		long dev_id = json_integer_value(j_dev_id);
 		long mm_count = json_integer_value(j_mm_count);
 
 		for (long thismmid = 1; thismmid <= mm_count; thismmid++) {
@@ -260,6 +267,10 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			map<string, Reimu::UniversalType> sequencedCrap;
 
 			for (auto &thisCrap : killedCrap) {
+
+				if (strstr(thisCrap.first.c_str(), "PVT"))
+					continue;
+
 				if (thisCrap.second.size() == 1) {
 					sequencedCrap.insert(pair<string, Reimu::UniversalType>(thisCrap.first, thisCrap.second[0]));
 
@@ -272,10 +283,26 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 				}
 			}
 
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Time", TimeStamp));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Addr", {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16}));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Port", RemoteEP.Port));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("DeviceID", dev_id));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("ModuleID", thismmid));
 
-			DestDB->PPB(SQLAutomator::INSERT_INTO, "module_avalon7", sequencedCrap);
+
+			string dnabuf = sequencedCrap.find("DNA")->second;
+
+			uint64_t dnabuf2 = strtoull(dnabuf.c_str(), NULL, 16);
+
+			sequencedCrap.erase("DNA");
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("DNA", {&dnabuf2, 8}));
+
+
+
+
+			DestDB->PPB((SQLAutomator::StatementType)(SQLAutomator::INSERT_INTO|SQLAutomator::SqlitePrepared), "module_avalon7", sequencedCrap);
 			cout << DestDB->Statement << endl;
-			DestDB->Exec();
+			DestDB->Step();
 
 		}
 

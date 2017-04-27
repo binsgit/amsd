@@ -23,21 +23,26 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 		if (events & BEV_EVENT_EOF) {
 			fprintf(stderr, "amsd: Collector: %s (%p) connection done (%d), %zu bytes received\n",
 				apiProcessor->RemoteEP.ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
+			apiProcessor->RawAPIData.push_back(0);
 			apiProcessor->Process();
 		} else {
 
 			if (events & BEV_EVENT_ERROR) {
-				DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
-								DataProcessing::Issue::ConnectionFailure,
-								apiProcessor->RemoteEP);
-				thisIssue.WriteDatabase(apiProcessor->IssueDB);
+				if (apiProcessor->Type == CgMinerAPI::Summary) {
+					DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
+									DataProcessing::Issue::ConnectionFailure,
+									apiProcessor->RemoteEP);
+					thisIssue.WriteDatabase(apiProcessor->IssueDB);
+				}
 				fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
 					apiProcessor->RemoteEP.ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
 			} else if (events & BEV_EVENT_TIMEOUT) {
-				DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
-								DataProcessing::Issue::ConnectionTimeout,
-								apiProcessor->RemoteEP);
-				thisIssue.WriteDatabase(apiProcessor->IssueDB);
+				if (apiProcessor->Type == CgMinerAPI::Summary) {
+					DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
+									DataProcessing::Issue::ConnectionTimeout,
+									apiProcessor->RemoteEP);
+					thisIssue.WriteDatabase(apiProcessor->IssueDB);
+				}
 				fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
 					apiProcessor->RemoteEP.ToString().c_str(), bev, con_ctx->thisCollector->TimeOut.tv_sec,
 					con_ctx->thisCollector->TimeOut.tv_usec, events, apiProcessor->RawAPIData.size());
@@ -77,7 +82,12 @@ void DataProcessing::Collector::conn_writecb(struct bufferevent *bev, void *user
 
 }
 
-DataProcessing::Collector::Collector() {
+void DataProcessing::Collector::Collect() {
+
+	cerr << "amsd: DataProcessing::Collector: Collector started.\n";
+
+	TimeStamp = time(NULL);
+	RuntimeData::TimeStamp::CurrentDataCollection(TimeStamp);
 
 	int rc;
 
@@ -92,8 +102,10 @@ DataProcessing::Collector::Collector() {
 	struct event_base *eventbase = event_base_new();
 	struct bufferevent *bebuf = NULL;
 
-	DBC_Controllers = db_controller.OpenSQLite3();
-	DBC_Issue = db_issue.OpenSQLite3();
+	DBC_Controllers = *db_controller.OpenSQLite3();
+	DBC_Issue = *db_issue.OpenSQLite3();
+
+	fprintf(stderr, "[Collector @ %p] Connecting databases...\n", this);
 
 	DBConnections.push_back(db_summary.OpenSQLite3());
 	DBConnections.push_back(db_module_avalon7.OpenSQLite3());
@@ -101,7 +113,7 @@ DataProcessing::Collector::Collector() {
 	DBConnections.push_back(db_pool.OpenSQLite3());
 
 	for (auto &thisDBC : DBConnections) {
-		thisDBC.Exec("BEGIN");
+		thisDBC->Exec("BEGIN");
 	}
 
 	DBC_Controllers.Prepare(db_controller.Statement(SQLAutomator::SELECT_FROM));
@@ -113,18 +125,20 @@ DataProcessing::Collector::Collector() {
 
 		RemoteEP = IPEndPoint(remote_inaddr, remote_addrlen, remote_port);
 
+		fprintf(stderr, "[Collector @ %p] Processing %s\n", this, RemoteEP.ToString().c_str());
+
 		int apiType = 1;
 
 		for (auto &thisDBC : DBConnections) {
 			bebuf = bufferevent_socket_new(eventbase, -1, BEV_OPT_CLOSE_ON_FREE);
 			bufferevent_set_timeouts(bebuf, &TimeOut, &TimeOut);
 
-			if (bufferevent_socket_connect(bebuf, (struct sockaddr *)&RemoteEP.SockAddr,
+			if (bufferevent_socket_connect(bebuf, RemoteEP.SockAddr,
 						       RemoteEP.AddressFamily == AF_INET ? sizeof(sockaddr_in) : sizeof(sockaddr_in6)) < 0) {
 				bufferevent_free(bebuf);
 				continue;
 			} else {
-				apiProcessor = new CgMinerAPI(TimeStamp, (CgMinerAPI::APIType)apiType, &thisDBC, &DBC_Issue, RemoteEP);
+				apiProcessor = new CgMinerAPI(TimeStamp, (CgMinerAPI::APIType)apiType, thisDBC, &DBC_Issue, RemoteEP);
 				conCtx = new ConnectionContext;
 				conCtx->thisAPIProcessor = apiProcessor;
 				conCtx->thisCollector = this;
@@ -141,9 +155,15 @@ DataProcessing::Collector::Collector() {
 	event_base_dispatch(eventbase);
 	event_base_free(eventbase);
 
+	fprintf(stderr, "[Collector @ %p] Disconnecting databases...\n", this);
+
+
 	for (auto &thisDBC : DBConnections) {
-		thisDBC.Exec("COMMIT");
+		thisDBC->Exec("COMMIT");
+		delete thisDBC;
 	}
+
+	RuntimeData::TimeStamp::LastDataCollection(RuntimeData::TimeStamp::CurrentDataCollection());
 
 
 

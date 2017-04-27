@@ -6,4 +6,11 @@
 
 void AMSD::Services::DataCollector(void *userp) {
 	cerr << "amsd: Services::DataCollector fired\n";
+
+	DataProcessing::Collector thisCollector;
+
+	thisCollector.Collect();
+
+
+
 }

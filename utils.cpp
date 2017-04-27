@@ -24,18 +24,18 @@
 const uint8_t zero4[4] = {0};
 
 string amsd_random_string(){
-	string ret = "";
-	char buf[24] = {0};
-	std::mt19937 rng;
-	rng.seed(std::random_device()());
-	std::uniform_int_distribution<std::mt19937::result_type> dist6(0, INTMAX_MAX);
-
-	snprintf(buf, 20, "%lx", dist6(rng));
-	ret += string(buf);
-
-	rng.seed(std::random_device()());
-	snprintf(buf, 20, "%lx", dist6(rng));
-	ret += string(buf);
+	string ret = "gggggggggggggggggggggggggggggggggggggggggg";
+//	char buf[24] = {0};
+//	std::mt19937 rng;
+//	rng.seed(std::random_device()());
+//	std::uniform_int_distribution<std::mt19937::result_type> dist6(0, INTMAX_MAX);
+//
+//	snprintf(buf, 20, "%lx", dist6(rng));
+//	ret += string(buf);
+//
+//	rng.seed(std::random_device()());
+//	snprintf(buf, 20, "%lx", dist6(rng));
+//	ret += string(buf);
 
 	return ret;
 }

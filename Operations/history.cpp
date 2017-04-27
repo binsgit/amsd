@@ -35,7 +35,7 @@ static void *getSummary(void *userp){
 	pCtx_i *thisCtx = (pCtx_i *)userp;
 
 	try {
-		SQLAutomator::SQLite3 thisdb = db_summary.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_summary.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Time, SUM(Elapsed) FROM summary WHERE Time >= ?1 GROUP BY Time");
 		thisdb.Bind(1, thisCtx->LastDataCollection-864000);
@@ -59,7 +59,7 @@ static void *getPool(void *userp) {
 	pCtx_i *thisCtx = (pCtx_i *) userp;
 
 	try {
-		SQLAutomator::SQLite3 thisdb = db_pool.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_pool.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Time, URL, SUM(DifficultyAccepted) FROM pool WHERE Time >= ?1 GROUP BY Time, URL");
 		thisdb.Bind(1, thisCtx->LastDataCollection - 864000);
@@ -147,7 +147,7 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 
 	} else if (type == "aliverate") {
 
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 
 
 		thisdb.Prepare("SELECT Time, Count(DISTINCT(Addr)), Count(ModuleID) FROM module_avalon7 WHERE Time >= ?1 GROUP BY Time");

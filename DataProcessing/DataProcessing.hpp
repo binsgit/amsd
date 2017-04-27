@@ -32,12 +32,12 @@ namespace AMSD {
 	    SQLAutomator::SQLite3 DBC_Controllers;
 	    SQLAutomator::SQLite3 DBC_Issue;
 
-	    vector<SQLAutomator::SQLite3> DBConnections;
+	    vector<SQLAutomator::SQLite3 *> DBConnections;
 
 	    time_t TimeStamp;
 	    struct timeval TimeOut = {15, 0};
 
-	    Collector();
+	    void Collect();
 
 
 	private:

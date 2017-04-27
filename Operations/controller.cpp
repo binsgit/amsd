@@ -38,7 +38,7 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 	op = json_string_value(j_op);
 
 	try {
-		Reimu::SQLAutomator::SQLite3 thisdb = db_controller.OpenSQLite3();
+		Reimu::SQLAutomator::SQLite3 thisdb = *db_controller.OpenSQLite3();
 
 		if (op == "list") {
 
@@ -86,21 +86,19 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 					if (j_con_ip && j_con_port)
 						if (json_is_string(j_con_ip) && json_is_integer(j_con_port)) {
 
-							thisdb.Bind(1, {timenow});
-							thisdb.Bind(3, {(int64_t)json_integer_value(j_con_port)});
+							json_int_t thisport = json_integer_value(j_con_port);
+
+							thisdb.Bind(1, timenow);
+							thisdb.Bind(3, (int64_t)thisport);
 
 
 							const char *ipsbuf = json_string_value(j_con_ip);
 
-							if (strchr(ipsbuf, ':')) {
-								in6_addr thisaddr;
-								inet_pton(AF_INET6, ipsbuf, &thisaddr);
-								thisdb.Bind(2, {thisaddr.__in6_u.__u6_addr8, 16});
-							} else {
-								in_addr thisaddr;
-								inet_pton(AF_INET, ipsbuf, &thisaddr);
-								thisdb.Bind(2, {&thisaddr.s_addr, 4});
-							}
+							Reimu::IPEndPoint remoteEP(string(ipsbuf), (uint16_t)thisport);
+
+							thisdb.Bind(2, {remoteEP.Addr,
+									remoteEP.AddressFamily == AF_INET ? 4 : 16});
+
 
 							thisdb.Step();
 							thisdb.Reset();

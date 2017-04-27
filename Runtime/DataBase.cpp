@@ -23,7 +23,7 @@ Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_de
 
 int AMSD::Database::Init() {
 	db_controller.TableName = "controller";
-	db_controller.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_controller.TableName + ".db";
+	db_controller.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_controller.TableName + ".db";
 	db_controller.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(Addr, Port) ON CONFLICT IGNORE");
 	db_controller.InsertColumns({{"Time", INTEGER},
 				     {"Addr", BLOB},
@@ -31,7 +31,7 @@ int AMSD::Database::Init() {
 				     {"Type", INTEGER}});
 
 	db_user.TableName = "user";
-	db_user.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_user.TableName + ".db";
+	db_user.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_user.TableName + ".db";
 	db_user.Statement_Ext(CREATE_TABLE, NULL, "UNIQUE(UserName) ON CONFLICT ABORT");
 	db_user.InsertColumns({{"UID", INTEGER|PRIMARY_KEY|AUTOINCREMENT|NOT_NULL},
 			       {"UserType", INTEGER},
@@ -47,7 +47,7 @@ int AMSD::Database::Init() {
 
 
 	db_issue.TableName = "issue";
-	db_issue.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_issue.TableName + ".db";
+	db_issue.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_issue.TableName + ".db";
 	db_issue.InsertColumns({{"Time", INTEGER},
 				{"Addr", BLOB},
 				{"Port", INTEGER},
@@ -55,13 +55,13 @@ int AMSD::Database::Init() {
 				{"Issue", BLOB}});
 
 	db_module_policy.TableName = "module_policy";
-	db_module_policy.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_module_policy.TableName + ".db";
+	db_module_policy.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_module_policy.TableName + ".db";
 	db_module_policy.InsertColumns({{"MTime", INTEGER},
 				{"DNA", BLOB},
 				{"Policy", BLOB}});
 
 	db_summary.TableName = "summary";
-	db_summary.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_summary.TableName + ".db";
+	db_summary.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_summary.TableName + ".db";
 	db_summary.InsertColumns({{"Time", INTEGER},
 				  {"Addr", BLOB},
 				  {"Port", INTEGER},
@@ -97,7 +97,7 @@ int AMSD::Database::Init() {
 
 
 	db_pool.TableName = "pool";
-	db_pool.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_pool.TableName + ".db";
+	db_pool.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_pool.TableName + ".db";
 	db_pool.InsertColumns({{"Time", INTEGER},
 			       {"Addr", BLOB},
 			       {"Port", INTEGER},
@@ -139,7 +139,7 @@ int AMSD::Database::Init() {
 
 
 	db_device.TableName = "device";
-	db_device.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_device.TableName + ".db";
+	db_device.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_device.TableName + ".db";
 	db_device.InsertColumns({{"Time", INTEGER},
 				 {"Addr", BLOB},
 				 {"Port", INTEGER},
@@ -172,7 +172,7 @@ int AMSD::Database::Init() {
 				 {"DeviceElapsed", INTEGER}});
 
 	db_module_avalon7.TableName = "module_avalon7";
-	db_module_avalon7.DatabaseURI = AMSD::Config::Path_RuntimeDir + db_module_avalon7.TableName + ".db";
+	db_module_avalon7.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_module_avalon7.TableName + ".db";
 	db_module_avalon7.InsertColumns({{"Time", INTEGER},
 					 {"Addr", BLOB},
 					 {"Port", INTEGER},
@@ -209,7 +209,7 @@ int AMSD::Database::Init() {
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<6; k++) {
-			db_module_avalon7.InsertColumn({"PLL_"+to_string(j)+"_"+to_string(k), INTEGER});
+			db_module_avalon7.InsertColumn({"PLL"+to_string(j)+"_"+to_string(k), INTEGER});
 		}
 	}
 
@@ -220,8 +220,8 @@ int AMSD::Database::Init() {
 					 {"LED", INTEGER}});
 
 	for (int j=0; j<4; j++) {
-		for (int k=0; k<18; k++) {
-			db_module_avalon7.InsertColumn({"MW_"+to_string(j)+"_"+to_string(k), INTEGER});
+		for (int k=0; k<22; k++) {
+			db_module_avalon7.InsertColumn({"MW"+to_string(j)+"_"+to_string(k), INTEGER});
 		}
 	}
 
@@ -235,7 +235,7 @@ int AMSD::Database::Init() {
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<6; k++) {
-			db_module_avalon7.InsertColumn({"SF_"+to_string(j)+"_"+to_string(k), INTEGER});
+			db_module_avalon7.InsertColumn({"SF"+to_string(j)+"_"+to_string(k), INTEGER});
 		}
 	}
 
@@ -244,22 +244,22 @@ int AMSD::Database::Init() {
 	}
 
 	for (int j=0; j<4; j++) {
-		for (int k=0; k<18; k++) {
-			db_module_avalon7.InsertColumn({"ERATIO_"+to_string(j)+"_"+to_string(k), REAL});
+		for (int k=0; k<22; k++) {
+			db_module_avalon7.InsertColumn({"ERATIO"+to_string(j)+"_"+to_string(k), REAL});
 		}
 	}
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<5; k++) {
-			for (int l=0; l<18; l++) { // 可以这很强势
-				db_module_avalon7.InsertColumn({"C_"+to_string(j)+"_"+to_string(k)+"_"+to_string(l), INTEGER});
+			for (int l=0; l<22; l++) { // 可以这很强势
+				db_module_avalon7.InsertColumn({"C_"+to_string(j)+"_0"+to_string(k)+"_"+to_string(l), INTEGER});
 			}
 		}
 	}
 
 	for (int j=0; j<4; j++) {
-		for (int k=0; k<18; k++) {
-			db_module_avalon7.InsertColumn({"GHSmm_"+to_string(j)+"_"+to_string(k), REAL});
+		for (int k=0; k<22; k++) {
+			db_module_avalon7.InsertColumn({"GHSmm0"+to_string(j)+"_"+to_string(k), REAL});
 		}
 	}
 
@@ -285,23 +285,28 @@ int AMSD::Database::Init() {
 
 	for (auto *thisdb : {&db_controller, &db_user, &db_issue, &db_summary, &db_pool, &db_device,
 			     &db_module_policy, &db_module_avalon7}) {
+
+		fprintf(stderr, "amsd: Database::Init(): Processing database %s\n", thisdb->TableName.c_str());
+
 		thisdb->Statement_Ext(CREATE_TABLE, "PRAGMA journal_mode=WAL; PRAGMA page_size=4096; ", NULL);
 
 		fd = open(thisdb->DatabaseURI.c_str(), O_RDWR);
 
 		try {
 			if (fd < 1) {
-				if (errno != ENOENT)
+				if (errno == ENOENT) {
+					fprintf(stderr, "amsd: Database::Init(): Database %s not found. Creating...\n", thisdb->TableName.c_str());
+					SQLite3 sq3 = *thisdb->OpenSQLite3(-1, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE |
+									      SQLITE_OPEN_CREATE, NULL);
+
+					sq3.Exec(thisdb->Statement(CREATE_TABLE));
+				} else {
 					throw Reimu::Exception(errno);
+				}
+
 			} else {
 				close(fd);
 			}
-
-
-			SQLite3 sq3 = thisdb->OpenSQLite3(-1, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE |
-							  SQLITE_OPEN_CREATE, NULL);
-
-			sq3.Exec(thisdb->Statement(CREATE_TABLE));
 
 		} catch (Reimu::Exception e) {
 			fprintf(stderr, "amsd: database: failed to open/initialize database %s: %s\n",
@@ -309,7 +314,7 @@ int AMSD::Database::Init() {
 			return -1;
 		}
 
-		fprintf(stderr, "amsd: database: processed database %s\n", thisdb->TableName.c_str());
+
 
 	}
 

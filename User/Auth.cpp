@@ -16,7 +16,7 @@ int AMSD::User::Auth(string token, User *userinfo) {
 	if (FoundInCache)
 		return 0;
 
-	SQLAutomator::SQLite3 userdb = db_user.OpenSQLite3();
+	SQLAutomator::SQLite3 userdb = *db_user.OpenSQLite3();
 
 
 	userdb.Prepare("SELECT * FROM user WHERE Token = ?1");

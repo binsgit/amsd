@@ -15,8 +15,8 @@ DataProcessing::Report::Report(string farm_name, bool collect_pool) {
 }
 
 void DataProcessing::Report::CollectData() {
-	SQLAutomator::SQLite3 thissummarydb = db_summary.OpenSQLite3();
-	SQLAutomator::SQLite3 thismoduledb = db_module_avalon7.OpenSQLite3();
+	SQLAutomator::SQLite3 thissummarydb = *db_summary.OpenSQLite3();
+	SQLAutomator::SQLite3 thismoduledb = *db_module_avalon7.OpenSQLite3();
 
 
 	uint8_t *blobuf;
@@ -35,14 +35,14 @@ void DataProcessing::Report::CollectData() {
 	while (thissummarydb.Step() == SQLITE_ROW){
 		Controller ctlbuf;
 
-		ctlbuf.RemoteEP = IPEndPoint(thissummarydb.Column(0), thissummarydb.ColumnBytes(0), thissummarydb.Column(1));
+		ctlbuf.RemoteEP = IPEndPoint(&thissummarydb.Column(0).BlobStore[0], thissummarydb.Column(0).BlobStore.size(), (uint16_t)thissummarydb.Column(1).operator uint64_t());
 		ctlbuf.Elapsed = thissummarydb.Column(2);
 		Farm0.Controllers.push_back(ctlbuf);
 		Farm0.MHS += (long double)thissummarydb.Column(3);
 	}
 
 	if (CollectPool) {
-		SQLAutomator::SQLite3 thispooldb = db_pool.OpenSQLite3();
+		SQLAutomator::SQLite3 thispooldb = *db_pool.OpenSQLite3();
 
 		thispooldb.Prepare("SELECT URL, User, DifficultyAccepted FROM pool WHERE "
 					   "LENGTH(URL) > 7 AND "
@@ -88,9 +88,8 @@ void DataProcessing::Report::CollectData() {
 	thismoduledb.Prepare("SELECT Count(*) FROM module_avalon7 WHERE Time = ?1");
 	thismoduledb.Bind(1, RuntimeData::TimeStamp::LastDataCollection());
 
-	thismoduledb.Step();
-
-	Farm0.Modules = thismoduledb.Column(0);
+	if (thismoduledb.Step() == SQLITE_ROW)
+		Farm0.Modules = thismoduledb.Column(0);
 }
 
 string DataProcessing::Report::HTML() {

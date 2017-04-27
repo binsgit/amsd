@@ -7,7 +7,7 @@
 int AMSD::User::Login(string user, string passwd, string &token) {
 	int ret = 0;
 
-	SQLAutomator::SQLite3 userdb = db_user.OpenSQLite3();
+	SQLAutomator::SQLite3 userdb = *db_user.OpenSQLite3();
 
 	userdb.Prepare("UPDATE user SET Token = ?1 WHERE UserName = ?2 AND Password = ?3");
 

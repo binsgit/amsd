@@ -37,7 +37,7 @@ static void *getModules(void *pctx) {
 	try {
 		dtCtx *dc = (dtCtx *) pctx;
 
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE Time = ?1");
 		thisdb.Bind(1, dc->LastDataCollection);
@@ -69,7 +69,7 @@ static void *getDeads(void *pctx) {
 	try {
 		dtCtx *dc = (dtCtx *)pctx;
 
-		SQLAutomator::SQLite3 thisdb = db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
 
 		thisdb.Prepare("SELECT Addr, Port FROM issue WHERE Time = ?1 AND Type >= 0x10 AND Type < 0x20");
 		thisdb.Bind(1, dc->LastDataCollection);
