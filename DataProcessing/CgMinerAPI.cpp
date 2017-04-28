@@ -110,7 +110,7 @@ DataProcessing::CgMinerAPI::CgMinerAPI() {
 
 DataProcessing::CgMinerAPI::CgMinerAPI(time_t timestamp, DataProcessing::CgMinerAPI::APIType t,
 				       Reimu::SQLAutomator::SQLite3 *db, Reimu::SQLAutomator::SQLite3 *issuedb,
-				       Reimu::IPEndPoint ep) {
+				       Reimu::IPEndPoint *ep) {
 	TimeStamp = timestamp;
 	Type = t;
 	DestDB = db;
@@ -143,8 +143,8 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 			}
 
 			DestDB->Bind(1, TimeStamp);
-			DestDB->Bind(2, {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16});
-			DestDB->Bind(3, RemoteEP.Port);
+			DestDB->Bind(2, {RemoteEP->Addr, RemoteEP->AddressFamily == AF_INET ? 4 : 16});
+			DestDB->Bind(3, RemoteEP->Port);
 
 			narg = 4;
 
@@ -183,7 +183,7 @@ void DataProcessing::CgMinerAPI::ParseAPIData(const char *api_obj_name, vector<s
 
 
 void DataProcessing::CgMinerAPI::Process() {
-	fprintf(stderr, "amsd: CgMinerAPI: processing %s for %s\n", ToString(Type), RemoteEP.ToString().c_str());
+	fprintf(stderr, "amsd: CgMinerAPI: processing %s for %s\n", ToString(Type), RemoteEP->ToString().c_str());
 
 	json_error_t j_err;
 
@@ -193,7 +193,7 @@ void DataProcessing::CgMinerAPI::Process() {
 		cerr << "\n" << (const char *)&RawAPIData[0] << "\n";
 
 		fprintf(stderr, "amsd: CgMinerAPI: error processing %s for %s: json error: %s\n", ToString(Type),
-			RemoteEP.ToString().c_str(), e.what().c_str());
+			RemoteEP->ToString().c_str(), e.what().c_str());
 
 		throw e;
 	}
@@ -284,8 +284,8 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			}
 
 			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Time", TimeStamp));
-			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Addr", {RemoteEP.Addr, RemoteEP.AddressFamily == AF_INET ? 4 : 16}));
-			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Port", RemoteEP.Port));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Addr", {RemoteEP->Addr, RemoteEP->AddressFamily == AF_INET ? 4 : 16}));
+			sequencedCrap.insert(pair<string, Reimu::UniversalType>("Port", RemoteEP->Port));
 			sequencedCrap.insert(pair<string, Reimu::UniversalType>("DeviceID", dev_id));
 			sequencedCrap.insert(pair<string, Reimu::UniversalType>("ModuleID", thismmid));
 
@@ -328,4 +328,8 @@ const string DataProcessing::CgMinerAPI::QueryString(DataProcessing::CgMinerAPI:
 
 const string DataProcessing::CgMinerAPI::QueryString() {
 	return QueryString(Type);
+}
+
+DataProcessing::CgMinerAPI::~CgMinerAPI() {
+
 }

@@ -29,8 +29,8 @@ namespace AMSD {
 		CgMinerAPI *thisAPIProcessor;
 	    };
 
-	    SQLAutomator::SQLite3 DBC_Controllers;
-	    SQLAutomator::SQLite3 DBC_Issue;
+	    SQLAutomator::SQLite3 *DBC_Controllers = NULL;
+	    SQLAutomator::SQLite3 *DBC_Issue = NULL;
 
 	    vector<SQLAutomator::SQLite3 *> DBConnections;
 
@@ -66,7 +66,7 @@ namespace AMSD {
 
 	    time_t TimeStamp = 0;
 	    APIType Type;
-	    Reimu::IPEndPoint RemoteEP;
+	    Reimu::IPEndPoint *RemoteEP = NULL;
 	    Reimu::SQLAutomator::SQLite3 *DestDB = NULL;
 	    Reimu::SQLAutomator::SQLite3 *IssueDB = NULL;
 	    int64_t UserData = 0;
@@ -86,7 +86,8 @@ namespace AMSD {
 
 	    // Constructor
 	    CgMinerAPI();
-	    CgMinerAPI(time_t timestamp, APIType t, Reimu::SQLAutomator::SQLite3 *db, Reimu::SQLAutomator::SQLite3 *issuedb, Reimu::IPEndPoint ep);
+	    CgMinerAPI(time_t timestamp, APIType t, Reimu::SQLAutomator::SQLite3 *db, Reimu::SQLAutomator::SQLite3 *issuedb, Reimu::IPEndPoint *ep);
+	    ~CgMinerAPI();
 
 	private:
 	    void ParseAPIData(const char *api_obj_name, vector<string> json_keys);

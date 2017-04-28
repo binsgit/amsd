@@ -11,6 +11,6 @@ void AMSD::Services::DataCollector(void *userp) {
 
 	thisCollector.Collect();
 
-
+	cerr << "amsd: Services::DataCollector Done\n";
 
 }
