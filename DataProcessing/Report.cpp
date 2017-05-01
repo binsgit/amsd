@@ -15,8 +15,8 @@ DataProcessing::Report::Report(string farm_name, bool collect_pool) {
 }
 
 void DataProcessing::Report::CollectData() {
-	SQLAutomator::SQLite3 thissummarydb = *db_summary.OpenSQLite3();
-	SQLAutomator::SQLite3 thismoduledb = *db_module_avalon7.OpenSQLite3();
+	SQLAutomator::SQLite3 *thissummarydb = db_summary.OpenSQLite3();
+	SQLAutomator::SQLite3 *thismoduledb = db_module_avalon7.OpenSQLite3();
 
 
 	uint8_t *blobuf;
@@ -28,23 +28,25 @@ void DataProcessing::Report::CollectData() {
 
 	Pool *poolbuf;
 
-	thissummarydb.Prepare("SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port");
+	thissummarydb->Prepare("SELECT Addr, Port, Elapsed, MHSav FROM summary WHERE Time = ?1 GROUP BY Addr, Port");
 
-	thissummarydb.Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+	thissummarydb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
 
-	while (thissummarydb.Step() == SQLITE_ROW){
+	while (thissummarydb->Step() == SQLITE_ROW){
 		Controller ctlbuf;
 
-		ctlbuf.RemoteEP = IPEndPoint(&thissummarydb.Column(0).BlobStore[0], thissummarydb.Column(0).BlobStore.size(), (uint16_t)thissummarydb.Column(1).operator uint64_t());
-		ctlbuf.Elapsed = thissummarydb.Column(2);
+		ctlbuf.RemoteEP = IPEndPoint(thissummarydb->Column(0).operator std::pair<void *, size_t>(), (uint16_t)thissummarydb->Column(1).operator uint64_t());
+		ctlbuf.Elapsed = thissummarydb->Column(2);
 		Farm0.Controllers.push_back(ctlbuf);
-		Farm0.MHS += (long double)thissummarydb.Column(3);
+		Farm0.MHS += (long double)thissummarydb->Column(3);
 	}
 
-	if (CollectPool) {
-		SQLAutomator::SQLite3 thispooldb = *db_pool.OpenSQLite3();
+	delete thissummarydb;
 
-		thispooldb.Prepare("SELECT URL, User, DifficultyAccepted FROM pool WHERE "
+	if (CollectPool) {
+		SQLAutomator::SQLite3 *thispooldb = db_pool.OpenSQLite3();
+
+		thispooldb->Prepare("SELECT URL, User, DifficultyAccepted FROM pool WHERE "
 					   "LENGTH(URL) > 7 AND "
 					   "Time > ?1 AND "
 					   "Addr = ?2 AND "
@@ -52,14 +54,14 @@ void DataProcessing::Report::CollectData() {
 					   "GROUP BY URL");
 
 		for (auto const &ctl: Farm0.Controllers) {
-			thispooldb.Bind(1, RuntimeData::TimeStamp::LastDataCollection()-86400);
-			thispooldb.Bind(2, {ctl.RemoteEP.Addr, ctl.RemoteEP.AddressFamily == AF_INET ? 4 : 16});
-			thispooldb.Bind(3, ctl.RemoteEP.Port);
+			thispooldb->Bind(1, RuntimeData::TimeStamp::LastDataCollection()-86400);
+			thispooldb->Bind(2, {ctl.RemoteEP.Addr, ctl.RemoteEP.AddressFamily == AF_INET ? 4 : 16});
+			thispooldb->Bind(3, ctl.RemoteEP.Port);
 
-			while (thispooldb.Step() == SQLITE_ROW) {
-				sbuf0 = thispooldb.Column(0).operator std::string();
-				sbuf1 = thispooldb.Column(1).operator std::string();
-				lubuf0 = thispooldb.Column(2);
+			while (thispooldb->Step() == SQLITE_ROW) {
+				sbuf0 = thispooldb->Column(0).operator std::string();
+				sbuf1 = thispooldb->Column(1).operator std::string();
+				lubuf0 = thispooldb->Column(2);
 
 
 				cbuf0 = (char *)strchr(sbuf1.c_str(), '.');
@@ -80,16 +82,20 @@ void DataProcessing::Report::CollectData() {
 				cerr << diffaccept2ghs(lubuf0, ctl.Elapsed) << endl;
 			}
 
-			thispooldb.Reset();
+			thispooldb->Reset();
 		}
+
+		delete thispooldb;
 
 	}
 
-	thismoduledb.Prepare("SELECT Count(*) FROM module_avalon7 WHERE Time = ?1");
-	thismoduledb.Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+	thismoduledb->Prepare("SELECT Count(*) FROM module_avalon7 WHERE Time = ?1");
+	thismoduledb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
 
-	if (thismoduledb.Step() == SQLITE_ROW)
-		Farm0.Modules = thismoduledb.Column(0);
+	if (thismoduledb->Step() == SQLITE_ROW)
+		Farm0.Modules = thismoduledb->Column(0);
+
+	delete thismoduledb;
 }
 
 string DataProcessing::Report::HTML() {

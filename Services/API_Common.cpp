@@ -16,7 +16,7 @@ int AMSD::Services::API::ParseRequest(char *inputstr, string &outputstr) {
 	int (*op)(json_t *in_data, json_t *&out_data);
 	char *serialized_out;
 
-	fprintf(stderr, "amsd: request %p: input: %s\n", (void *)inputstr, inputstr);
+//	fprintf(stderr, "amsd: request %p: input: %s\n", (void *)inputstr, inputstr);
 
 	if (!i_json_root) {
 		fprintf(stderr, "amsd: request %p: json error: on line %d: %s\n", (void *)inputstr, err.line, err.text);
@@ -94,7 +94,7 @@ int AMSD::Services::API::ParseRequest(char *inputstr, string &outputstr) {
 	json_decref(i_json_root);
 
 
-	fprintf(stderr, "amsd: request %p: output: %s\n", (void *)inputstr, outputstr.c_str());
+//	fprintf(stderr, "amsd: request %p: output: %s\n", (void *)inputstr, outputstr.c_str());
 
 	return 0;
 
@@ -133,7 +133,7 @@ void Services::API::ConnectionHandler(Services::API::ConCtx *data) {
 
 		rrc = read(fd, buf_in, BUF_SIZE);
 
-		fprintf(stderr, "amsd: server: read(%d, %p, %d) = %zd\n", fd, (void *)buf_in, BUF_SIZE, rrc);
+//		fprintf(stderr, "amsd: server: read(%d, %p, %d) = %zd\n", fd, (void *)buf_in, BUF_SIZE, rrc);
 
 		if (rrc < 0)
 			goto ending;
@@ -146,11 +146,11 @@ void Services::API::ConnectionHandler(Services::API::ConCtx *data) {
 
 	input.push_back(0);
 
-	fprintf(stderr, "amsd: server: read %zu bytes from fd %d: %s\n", input.size(), fd, input.begin());
+//	fprintf(stderr, "amsd: server: read %zu bytes from fd %d: %s\n", input.size(), fd, input.begin());
 
 	input_str = (char *)&input[0];
 
-	fprintf(stderr, "amsd: server: parsing input %p\n", (void *)input_str);
+//	fprintf(stderr, "amsd: server: parsing input %p\n", (void *)input_str);
 	ParseRequest(input_str, output);
 
 	cerr << "amsd: server: fd " << fd << " output: " << output << "\n";

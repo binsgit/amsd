@@ -34,7 +34,7 @@ int AMSD::Operations::user(json_t *in_data, json_t *&out_data) {
 
 	string op(json_string_value(j_op));
 
-	SQLAutomator::SQLite3 sq3 = *db_user.OpenSQLite3();
+	SQLAutomator::SQLite3 *sq3 = db_user.OpenSQLite3();
 
 
 	if (op == "add") {
@@ -48,19 +48,21 @@ int AMSD::Operations::user(json_t *in_data, json_t *&out_data) {
 
 		SHA512((const u_char *)passwd.c_str(), passwd.length(), hsbuf);
 
-		sq3.Parse(INSERT_INTO, "user", {
+		sq3->Parse(INSERT_INTO, "user", {
 			{"UserType", {1}},
 			{"UserName", {string(json_string_value(j_username))}},
 			{"UserName", {hsbuf, 64}}
 		});
 
-		sq3.Step();
+		sq3->Step();
 
 	} else if (op == "upd") {
 
 	} else if (op == "login") {
 
 	}
+
+	delete sq3;
 
 	return 0;
 }

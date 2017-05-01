@@ -39,6 +39,7 @@ namespace AMSD {
 
 	static void DataCollector(void *userp);
 	static void MailReport(void *userp);
+	static void GlimpseDataUpdater(void *userp);
     };
 }
 

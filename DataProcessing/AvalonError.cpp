@@ -76,9 +76,9 @@ vector<uint8_t> DataProcessing::AvalonError::Desc() {
 
 uint64_t DataProcessing::AvalonError::DetectExtErrs(char *ver, double wu, double dh, uint32_t crc) {
 	uint64_t ret = 0;
-	char vbuf[4];
+	char vbuf[8];
 
-	strncpy(vbuf, ver, 3);
+	snprintf(vbuf, 7, "%s", ver);
 	vbuf[3] = 0;
 
 	if (strstr(vbuf, "721")) {

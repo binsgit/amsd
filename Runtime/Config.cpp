@@ -87,6 +87,8 @@ int AMSD::Config::Load() {
 
 	Lock_Config.unlock();
 
+	json_decref(j_cfg);
+
 	return ret;
 }
 

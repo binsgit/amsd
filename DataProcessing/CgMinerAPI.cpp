@@ -303,7 +303,7 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			DestDB->PPB((SQLAutomator::StatementType)(SQLAutomator::INSERT_INTO|SQLAutomator::SqlitePrepared), "module_avalon7", sequencedCrap);
 			cout << DestDB->Statement << endl;
 			DestDB->Step();
-
+			DestDB->Reset();
 		}
 
 	}
@@ -331,5 +331,6 @@ const string DataProcessing::CgMinerAPI::QueryString() {
 }
 
 DataProcessing::CgMinerAPI::~CgMinerAPI() {
-
+	if (JsonAPIData)
+		json_decref(JsonAPIData);
 }

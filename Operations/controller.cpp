@@ -38,19 +38,19 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 	op = json_string_value(j_op);
 
 	try {
-		Reimu::SQLAutomator::SQLite3 thisdb = *db_controller.OpenSQLite3();
+		Reimu::SQLAutomator::SQLite3 *thisdb = db_controller.OpenSQLite3();
 
 		if (op == "list") {
 
 			j_controllers = json_array();
 
-			thisdb.Prepare(db_controller.Statement(SELECT_FROM));
+			thisdb->Prepare(db_controller.Statement(SELECT_FROM));
 
-			while ( (rc = thisdb.Step()) == SQLITE_ROW) {
+			while ( (rc = thisdb->Step()) == SQLITE_ROW) {
 				j_controller = json_object();
 
-				addr = sqlite3_column_blob(thisdb.SQLite3Statement, 1);
-				addr_len = sqlite3_column_bytes(thisdb.SQLite3Statement, 1);
+				addr = sqlite3_column_blob(thisdb->SQLite3Statement, 1);
+				addr_len = sqlite3_column_bytes(thisdb->SQLite3Statement, 1);
 
 				if (addr_len == 4) {
 					inet_ntop(AF_INET, addr, addrsbuf, INET_ADDRSTRLEN);
@@ -58,9 +58,9 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 					inet_ntop(AF_INET6, addr, addrsbuf, INET6_ADDRSTRLEN);
 				}
 
-				json_object_set_new(j_controller, "mtime", json_integer(sqlite3_column_int(thisdb.SQLite3Statement, 0)));
+				json_object_set_new(j_controller, "mtime", json_integer(sqlite3_column_int(thisdb->SQLite3Statement, 0)));
 				json_object_set_new(j_controller, "ip", json_string(addrsbuf));
-				json_object_set_new(j_controller, "port", json_integer(sqlite3_column_int(thisdb.SQLite3Statement, 2)));
+				json_object_set_new(j_controller, "port", json_integer(sqlite3_column_int(thisdb->SQLite3Statement, 2)));
 				json_array_append_new(j_controllers, j_controller);
 			}
 
@@ -74,9 +74,9 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 
 			timenow = time(NULL);
 
-			thisdb.Exec("BEGIN");
+			thisdb->Exec("BEGIN");
 
-			thisdb.Prepare("INSERT INTO controller VALUES (?1, ?2, ?3, 7)");
+			thisdb->Prepare("INSERT INTO controller VALUES (?1, ?2, ?3, 7)");
 
 			json_array_foreach(j_controllers, index, j_controller) {
 				if (json_is_object(j_controller)) {
@@ -88,33 +88,33 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 
 							json_int_t thisport = json_integer_value(j_con_port);
 
-							thisdb.Bind(1, timenow);
-							thisdb.Bind(3, (int64_t)thisport);
+							thisdb->Bind(1, timenow);
+							thisdb->Bind(3, (int64_t)thisport);
 
 
 							const char *ipsbuf = json_string_value(j_con_ip);
 
 							Reimu::IPEndPoint remoteEP(string(ipsbuf), (uint16_t)thisport);
 
-							thisdb.Bind(2, {remoteEP.Addr,
+							thisdb->Bind(2, {remoteEP.Addr,
 									remoteEP.AddressFamily == AF_INET ? 4 : 16});
 
 
-							thisdb.Step();
-							thisdb.Reset();
+							thisdb->Step();
+							thisdb->Reset();
 						}
 				}
 			}
 
-			thisdb.Exec("COMMIT");
+			thisdb->Exec("COMMIT");
 
 		} else if (op == "del") {
 			j_controllers = json_object_get(in_data, "controllers");
 			if (!j_controllers || !json_is_array(j_controllers))
 				return -1;
 
-			thisdb.Exec("BEGIN");
-			thisdb.Prepare("DELETE FROM controller WHERE Addr = ?1 AND Port = ?2");
+			thisdb->Exec("BEGIN");
+			thisdb->Prepare("DELETE FROM controller WHERE Addr = ?1 AND Port = ?2");
 
 			json_array_foreach(j_controllers, index, j_controller) {
 				if (json_is_object(j_controller)) {
@@ -129,26 +129,28 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 							if (strchr(ipsbuf, ':')) {
 								in6_addr thisaddr;
 								inet_pton(AF_INET6, ipsbuf, &thisaddr);
-								thisdb.Bind(1, {thisaddr.__in6_u.__u6_addr8, 16});
+								thisdb->Bind(1, {thisaddr.__in6_u.__u6_addr8, 16});
 							} else {
 								in_addr thisaddr;
 								inet_pton(AF_INET, ipsbuf, &thisaddr);
-								thisdb.Bind(1, {&thisaddr.s_addr, 4});
+								thisdb->Bind(1, {&thisaddr.s_addr, 4});
 							}
 
-							thisdb.Bind(2, {(int64_t)json_integer_value(j_con_port)});
+							thisdb->Bind(2, {(int64_t)json_integer_value(j_con_port)});
 
-							thisdb.Step();
-							thisdb.Reset();
+							thisdb->Step();
+							thisdb->Reset();
 						}
 				}
 			}
 
-			thisdb.Exec("COMMIT");
+			thisdb->Exec("COMMIT");
 
 		} else if (op == "wipe") {
-			thisdb.Exec("TRUNCATE controller");
+			thisdb->Exec("TRUNCATE controller");
 		}
+
+		delete thisdb;
 
 	} catch (Reimu::Exception e) {
 		return -2;

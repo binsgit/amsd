@@ -165,7 +165,7 @@ namespace AMSD {
 
 	    enum IssueType {
 		Unknown = 0,
-		ConnectionFailure = 0x10, ConnectionTimeout = 0x11,
+		ConnectionFailure = 0x10, ConnectionTimeout = 0x11, RawDataError = 0x12,
 		AvalonError = 0x20
 	    };
 

@@ -37,27 +37,29 @@ static void *getModules(void *pctx) {
 	try {
 		dtCtx *dc = (dtCtx *) pctx;
 
-		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 *thisdb = db_module_avalon7.OpenSQLite3();
 
-		thisdb.Prepare("SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE Time = ?1");
-		thisdb.Bind(1, dc->LastDataCollection);
-
+		thisdb->Prepare("SELECT Addr, Port, GHSmm, Temp, TMax FROM module_avalon7 WHERE Time = ?1");
+		thisdb->Bind(1, dc->LastDataCollection);
+		fprintf(stderr, "amsd: Operations::farmap::getModules: LastDataCollection: %lu\n", dc->LastDataCollection);
 		mController *ctl;
 
-		while (thisdb.Step() == SQLITE_ROW) {
-			Reimu::IPEndPoint thisEP(thisdb.Column(0), (uint16_t) thisdb.ColumnBytes(0), thisdb.Column(1));
-
+		while (thisdb->Step() == SQLITE_ROW) {
+			Reimu::IPEndPoint thisEP(thisdb->Column(0).operator std::pair<void *, size_t>(), thisdb->Column(1));
+			fprintf(stderr, "amsd: Operations::farmap::getModules: Node %s\n", thisEP.ToString().c_str());
 			pthread_mutex_lock(&dc->Lock);
 			ctl = &dc->ctls->operator[](thisEP.ToString());
 			pthread_mutex_unlock(&dc->Lock);
 
 			ctl->IP = thisEP.ToString(Reimu::IPEndPoint::String_IP);
 			ctl->Port = thisEP.Port;
-			ctl->GHS += (double)thisdb.Column(2);
-			ctl->TempSum += (double)thisdb.Column(3);
-			ctl->TMaxSum += (double)thisdb.Column(4);
+			ctl->GHS += (double)thisdb->Column(2);
+			ctl->TempSum += (double)thisdb->Column(3);
+			ctl->TMaxSum += (double)thisdb->Column(4);
 			ctl->Mods++;
 		}
+
+		delete thisdb;
 	} catch (Reimu::Exception e) {
 
 	}
@@ -69,15 +71,15 @@ static void *getDeads(void *pctx) {
 	try {
 		dtCtx *dc = (dtCtx *)pctx;
 
-		SQLAutomator::SQLite3 thisdb = *db_module_avalon7.OpenSQLite3();
+		SQLAutomator::SQLite3 *thisdb = db_module_avalon7.OpenSQLite3();
 
-		thisdb.Prepare("SELECT Addr, Port FROM issue WHERE Time = ?1 AND Type >= 0x10 AND Type < 0x20");
-		thisdb.Bind(1, dc->LastDataCollection);
+		thisdb->Prepare("SELECT Addr, Port FROM issue WHERE Time = ?1 AND Type >= 0x10 AND Type < 0x20");
+		thisdb->Bind(1, dc->LastDataCollection);
 
 		mController *ctl;
 
-		while (thisdb.Step() == SQLITE_ROW) {
-			Reimu::IPEndPoint thisEP(thisdb.Column(0), (uint16_t)thisdb.ColumnBytes(0), thisdb.Column(1));
+		while (thisdb->Step() == SQLITE_ROW) {
+			Reimu::IPEndPoint thisEP(thisdb->Column(0), (uint16_t)thisdb->ColumnBytes(0), thisdb->Column(1));
 
 			pthread_mutex_lock(&dc->Lock);
 			ctl = &dc->ctls->operator[](thisEP.ToString());
@@ -85,6 +87,8 @@ static void *getDeads(void *pctx) {
 
 			ctl->Dead = 1;
 		}
+
+		delete thisdb;
 	} catch (Reimu::Exception e) {
 
 	}
@@ -104,11 +108,12 @@ int AMSD::Operations::farmap(json_t *in_data, json_t *&out_data){
 	dtCtx thisCtx;
 
 	thisCtx.ctls = &ctls;
+	thisCtx.LastDataCollection = RuntimeData::TimeStamp::LastDataCollection();
 
 	pthread_t t_gm, t_gd;
 
-	pthread_create(&t_gm, &_pthread_detached, &getModules, &thisCtx);
-	pthread_create(&t_gd, &_pthread_detached, &getDeads, &thisCtx);
+	pthread_create(&t_gm, NULL, &getModules, &thisCtx);
+	pthread_create(&t_gd, NULL, &getDeads, &thisCtx);
 
 	pthread_join(t_gm, NULL);
 	pthread_join(t_gd, NULL);

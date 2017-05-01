@@ -18,6 +18,27 @@
 
 #include "Operations.hpp"
 
+static shared_timed_mutex Lock;
+static long Modules = 0, Controllers = 0, MHS_T = 0;
+static double MHS = 0;
+
+void Services::GlimpseDataUpdater(void *userp) {
+	fprintf(stderr, "amsd: Services::GlimpseDataUpdater: Updating glimpse data in background...\n");
+
+	DataProcessing::Report rpt("", 0);
+
+	Lock.lock();
+
+	Modules = rpt.Farm0.Modules;
+	Controllers = rpt.Farm0.Controllers.size();
+	MHS = (double)rpt.Farm0.MHS;
+	MHS_T = (long)rpt.Farm0.Modules*1000*7300;
+
+	Lock.unlock();
+
+	fprintf(stderr, "amsd: Services::GlimpseDataUpdater: Done.\n");
+}
+
 int AMSD::Operations::glimpse(json_t *in_data, json_t *&out_data){
 	DataProcessing::Report rpt("", 0);
 

@@ -24,7 +24,14 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 			fprintf(stderr, "amsd: Collector: %s (%p) connection done (%d), %zu bytes received\n",
 				apiProcessor->RemoteEP->ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
 			apiProcessor->RawAPIData.push_back(0);
-			apiProcessor->Process();
+			try {
+				apiProcessor->Process();
+			} catch (Reimu::Exception e) {
+				DataProcessing::Issue thisIssue(con_ctx->thisCollector->TimeStamp,
+								DataProcessing::Issue::RawDataError,
+								*apiProcessor->RemoteEP);
+				thisIssue.WriteDatabase(apiProcessor->IssueDB);
+			}
 		} else {
 
 			if (events & BEV_EVENT_ERROR) {
