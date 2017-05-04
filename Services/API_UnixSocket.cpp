@@ -17,7 +17,7 @@ void AMSD::Services::API::UnixSocket(void *userp) {
 	struct sockaddr_un listen_addr;
 	int fd_listener,fd_client,rc;
 
-	if ( (fd_listener = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	if ( (fd_listener = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {d
 		perror("socket error");
 		exit(-1);
 	}
@@ -38,7 +38,7 @@ void AMSD::Services::API::UnixSocket(void *userp) {
 		exit(2);
 	}
 
-	fprintf(stderr, "amsd: server: listening at unix domain socket `%s'\n", socket_path.c_str());
+	LogI("amsd: Services::API::UnixSocket: listening at unix domain socket `%s'", socket_path.c_str());
 
 	chmod(socket_path.c_str(), 0666);
 
@@ -48,7 +48,7 @@ void AMSD::Services::API::UnixSocket(void *userp) {
 			continue;
 		}
 
-		fprintf(stderr, "amsd: server: new connection, fd %d\n", fd_client);
+		LogI("amsd: Services::API::UnixSocket: new connection, fd %d", fd_client);
 
 		ConCtx *newctx = (ConCtx *)calloc(1, sizeof(struct ConCtx));
 		newctx->fd = fd_client;

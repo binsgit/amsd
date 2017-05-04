@@ -60,6 +60,7 @@
 #include <event2/bufferevent.h>
 
 #include <libReimu/Tasker/Tasker.hpp>
+#include <libReimu/Logging/Logging.hpp>
 #include <libReimu/ProgramOptions/ProgramOptions.hpp>
 #include <libReimu/UniversalType/UniversalType.hpp>
 #include <libReimu/IPEndPoint/IPEndPoint.hpp>

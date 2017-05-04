@@ -10,7 +10,7 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 	CgMinerAPI *apiProcessor = con_ctx->thisAPIProcessor;
 
 	if (events & BEV_EVENT_CONNECTED) {
-		fprintf(stderr,"amsd: Collector: %s (%p) connected\n", apiProcessor->RemoteEP->ToString().c_str(), bev);
+		LogD("amsd: Collector: %s (%p) connected", apiProcessor->RemoteEP->ToString().c_str(), bev);
 
 		if (!apiProcessor->UserData) {
 			string cmdstr = apiProcessor->QueryString();
@@ -21,7 +21,7 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 
 	} else {
 		if (events & BEV_EVENT_EOF) {
-			fprintf(stderr, "amsd: Collector: %s (%p) connection done (%d), %zu bytes received\n",
+			LogD("amsd: Collector: %s (%p) connection done (%d), %zu bytes received",
 				apiProcessor->RemoteEP->ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
 			apiProcessor->RawAPIData.push_back(0);
 			try {
@@ -41,7 +41,7 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 									*apiProcessor->RemoteEP);
 					thisIssue.WriteDatabase(apiProcessor->IssueDB);
 				}
-				fprintf(stderr, "amsd: datacollector: %s (%p) connection error (%d), %zu bytes received\n",
+				LogD("amsd: Collector: %s (%p) connection error (%d), %zu bytes received",
 					apiProcessor->RemoteEP->ToString().c_str(), bev, events, apiProcessor->RawAPIData.size());
 			} else if (events & BEV_EVENT_TIMEOUT) {
 				if (apiProcessor->Type == CgMinerAPI::Summary) {
@@ -50,7 +50,7 @@ void DataProcessing::Collector::event_cb(struct bufferevent *bev, short events, 
 									*apiProcessor->RemoteEP);
 					thisIssue.WriteDatabase(apiProcessor->IssueDB);
 				}
-				fprintf(stderr, "amsd: datacollector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received\n",
+				LogD("amsd: Collector: %s (%p) connection timeout [%zu.%zu secs] (%d), %zu bytes received",
 					apiProcessor->RemoteEP->ToString().c_str(), bev, con_ctx->thisCollector->TimeOut.tv_sec,
 					con_ctx->thisCollector->TimeOut.tv_usec, events, apiProcessor->RawAPIData.size());
 			}
@@ -91,7 +91,7 @@ void DataProcessing::Collector::conn_writecb(struct bufferevent *bev, void *user
 
 void DataProcessing::Collector::Collect() {
 
-	cerr << "amsd: DataProcessing::Collector: Collector started.\n";
+	LogI("amsd: DataProcessing::Collector: Collector started.");
 
 	TimeStamp = time(NULL);
 	RuntimeData::TimeStamp::CurrentDataCollection(TimeStamp);
@@ -112,7 +112,7 @@ void DataProcessing::Collector::Collect() {
 	DBC_Controllers = db_controller.OpenSQLite3();
 	DBC_Issue = db_issue.OpenSQLite3();
 
-	fprintf(stderr, "[Collector @ %p] Connecting databases...\n", this);
+	LogD("[Collector @ %p] Connecting databases...", this);
 
 	DBConnections.push_back(db_summary.OpenSQLite3());
 	DBConnections.push_back(db_module_avalon7.OpenSQLite3());
@@ -147,7 +147,7 @@ void DataProcessing::Collector::Collect() {
 		IPEndPoint *RemoteEP = new IPEndPoint(remote_inaddr, remote_addrlen, remote_port);
 		Dustbin.push_back(RemoteEP);
 
-		fprintf(stderr, "[Collector @ %p] Processing %s\n", this, RemoteEP->ToString().c_str());
+		LogD("[Collector @ %p] Processing %s", this, RemoteEP->ToString().c_str());
 
 		int apiType = 1;
 
@@ -179,7 +179,7 @@ void DataProcessing::Collector::Collect() {
 	event_base_dispatch(eventbase);
 	event_base_free(eventbase);
 
-	fprintf(stderr, "[Collector @ %p] Disconnecting databases...\n", this);
+	LogD("[Collector @ %p] Disconnecting databases...", this);
 
 	delete DBC_Issue;
 	delete DBC_Controllers;
@@ -194,7 +194,7 @@ void DataProcessing::Collector::Collect() {
 
 	RuntimeData::TimeStamp::LastDataCollection(RuntimeData::TimeStamp::CurrentDataCollection());
 
-
+	LogI("amsd: DataProcessing::Collector: Collector done.");
 
 }
 

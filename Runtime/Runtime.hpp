@@ -7,6 +7,13 @@
 
 #include "../amsd.hpp"
 
+#define LogI(fmt, ...)		AMSD_Logger.Log(50, fmt, ##__VA_ARGS__)
+#define LogW(fmt, ...)		AMSD_Logger.Log(40, fmt, ##__VA_ARGS__)
+#define LogE(fmt, ...)		AMSD_Logger.Log(20, fmt, ##__VA_ARGS__)
+#define LogD(fmt, ...)		AMSD_Logger.Log(60, fmt, ##__VA_ARGS__)
+
+extern Kanna::Logging AMSD_Logger;
+
 using namespace std;
 
 extern Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device,

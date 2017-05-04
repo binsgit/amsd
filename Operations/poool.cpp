@@ -18,7 +18,7 @@
 
 #include "Operations.hpp"
 
-int AMSD::Operations::mailreport(json_t *in_data, json_t *&out_data){
+int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 	LogI("amsd: Operations::mailreport: Invoked from API");
 
 	Services::MailReport(NULL);

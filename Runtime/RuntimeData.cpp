@@ -33,6 +33,7 @@ static uint8_t *RDM_OFFSET_TimeStamp_CurrentDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_LastDataCollection;
 static uint8_t *RDM_OFFSET_TimeStamp_DBFirstDataCollection;
 
+Kanna::Logging AMSD_Logger("/var/log/amsd.log");
 
 int AMSD::RuntimeData::Init() {
 	if (!Reimu::FileSystem::Exist(Config::Path_RuntimeDir)) {

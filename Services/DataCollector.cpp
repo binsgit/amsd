@@ -5,12 +5,12 @@
 #include "Services.hpp"
 
 void AMSD::Services::DataCollector(void *userp) {
-	cerr << "amsd: Services::DataCollector fired\n";
+	LogD("amsd: Services::DataCollector: Started.");
 
 	DataProcessing::Collector thisCollector;
 
 	thisCollector.Collect();
 
-	cerr << "amsd: Services::DataCollector Done\n";
+	LogD("amsd: Services::DataCollector: Done.");
 
 }

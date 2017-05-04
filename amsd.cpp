@@ -25,7 +25,7 @@ uint8_t *amsd_shm = NULL;
 using namespace AMSD;
 
 void ShowHelp() {
-	fprintf(stderr, ""
+	LogE( ""
 		"Usage: amsd [-c <config_dir>] [-g <config_dir>] [-h|--help]\n"
 		"\n"
 		"Options:\n"
@@ -37,7 +37,7 @@ void ShowHelp() {
 
 int main(int argc, char **argv) {
 
-	fprintf(stderr, "Avalon Management System Daemon v%.2f - Get things done rapidly!\n", AMSD_VERSION);
+	LogI("Avalon Management System Daemon v%.2f - Get things done rapidly!\n", AMSD_VERSION);
 
 
 	signal(SIGPIPE, SIG_IGN);
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 	pthread_attr_setdetachstate(&_pthread_detached, PTHREAD_CREATE_DETACHED);
 
 	if (libssh2_init(0) != 0) {
-		fprintf(stderr, "amsd: Fatal: libssh2 initialization failed!!\n");
+		LogE("amsd: Fatal: libssh2 initialization failed!!\n");
 		exit(2);
 	}
 
@@ -70,37 +70,37 @@ int main(int argc, char **argv) {
 		AMSD::Config::Path_ConfigDir = arg_gencfgpath;
 		AMSD::Config::Init();
 		if (AMSD::Config::Save() != 0) {
-			cerr << "amsd: Failed to generate example configuration file(s) in " << arg_gencfgpath << endl;
+			LogE("amsd: Failed to generate example configuration file(s) in %s", arg_gencfgpath);
 			exit(1);
 		} else {
-			cerr << "amsd: Generated example configuration file(s) in " << arg_gencfgpath << endl;
+			LogI("amsd: Generated example configuration file(s) in %s", arg_gencfgpath);
 			exit(0);
 		}
 	}
 
 
 	if (Config::Load() != 0) {
-		fprintf(stderr,"amsd: Config::Load() failed\n");
+		LogE("amsd: Config::Load() failed\n");
 		return 2;
 	}
 
 	if (Database::Init() != 0) {
-		fprintf(stderr,"amsd: Database::Init() failed\n");
+		LogE("amsd: Database::Init() failed\n");
 		return 2;
 	}
 
 	if (Operations::Init() != 0){
-		fprintf(stderr,"amsd: Operations::Init() failed\n");
+		LogE("amsd: Operations::Init() failed\n");
 		return 2;
 	}
 
 	if (RuntimeData::Init() != 0){
-		fprintf(stderr,"amsd: RuntimeData::Init() failed\n");
+		LogE("amsd: RuntimeData::Init() failed\n");
 		return 2;
 	}
 
 	if (Services::Init() != 0){
-		fprintf(stderr,"amsd: Services::Init() failed\n");
+		LogE("amsd: Services::Init() failed\n");
 		return 2;
 	}
 

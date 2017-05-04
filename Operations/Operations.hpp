@@ -32,6 +32,7 @@ namespace AMSD {
 	static int status(json_t *in_data, json_t *&out_data);
 	static int supertac(json_t *in_data, json_t *&out_data);
 	static int user(json_t *in_data, json_t *&out_data);
+	static int poool(json_t *in_data, json_t *&out_data);
 	static int version(json_t *in_data, json_t *&out_data);
     };
 }
