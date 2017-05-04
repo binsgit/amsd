@@ -17,7 +17,7 @@ void AMSD::Services::API::UnixSocket(void *userp) {
 	struct sockaddr_un listen_addr;
 	int fd_listener,fd_client,rc;
 
-	if ( (fd_listener = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {d
+	if ( (fd_listener = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
 		perror("socket error");
 		exit(-1);
 	}
