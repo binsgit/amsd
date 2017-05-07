@@ -181,6 +181,8 @@ public:
 
 };
 
+extern shared_timed_mutex Lock_SuperRTACTasksList;
+extern multimap<string, SuperRTACSession *> SuperRTACTasksList;
 
 class SuperRTACSession {
 private:

@@ -20,13 +20,15 @@
 
 const char *scripts_path = "/etc/ams/srtac_scripts.json";
 static pthread_mutex_t scripts_fileio_lock = PTHREAD_MUTEX_INITIALIZER;
-static shared_timed_mutex map_lock;
+
 shared_timed_mutex scripts_memio_lock;
 
 json_t *srtac_scripts = NULL;
 
 atomic_size_t taskscount(0);
-multimap<string, SuperRTACSession *> rtactasks;
+
+shared_timed_mutex Lock_SuperRTACTasksList;
+multimap<string, SuperRTACSession *> SuperRTACTasksList;
 
 static bool load_scripts(){
 	if (srtac_scripts)
@@ -39,7 +41,7 @@ static bool load_scripts(){
 	srtac_scripts = json_load_file(scripts_path, 0, &err);
 	pthread_mutex_unlock(&scripts_fileio_lock);
 
-	return !(srtac_scripts == NULL);
+	return srtac_scripts != NULL;
 }
 
 static int save_scripts(){
@@ -178,8 +180,8 @@ int AMSD::Operations::supertac(json_t *in_data, json_t *&out_data){
 	} else if (op == "tasks") {
 		j_tasks = json_array();
 
-		map_lock.lock_shared();
-		for (auto thistask = rtactasks.begin(); thistask != rtactasks.end(); thistask++) {
+		Lock_SuperRTACTasksList.lock_shared();
+		for (auto thistask = SuperRTACTasksList.begin(); thistask != SuperRTACTasksList.end(); thistask++) {
 			j_task = json_object();
 			j_task_obj_buf = json_string(thistask->first.c_str());
 			json_object_set_new(j_task, "ip", j_task_obj_buf);
@@ -199,7 +201,7 @@ int AMSD::Operations::supertac(json_t *in_data, json_t *&out_data){
 			json_array_append_new(j_tasks, j_task);
 			taskscount++;
 		}
-		map_lock.unlock_shared();
+		Lock_SuperRTACTasksList.unlock_shared();
 
 
 		j_task_obj_buf = json_integer((json_int_t)taskscount);
@@ -257,7 +259,7 @@ int AMSD::Operations::supertac(json_t *in_data, json_t *&out_data){
 		if (!script_content)
 			return -1;
 
-		map_lock.lock();
+		Lock_SuperRTACTasksList.lock();
 		json_array_foreach(j_exec_ips_reqd, i, j_exec_ip_reqd) {
 			if (json_is_string(j_exec_ip_reqd)) {
 				ipbuf = json_string_value(j_exec_ip_reqd);
@@ -275,26 +277,26 @@ int AMSD::Operations::supertac(json_t *in_data, json_t *&out_data){
 				}
 
 				srtac->Exec();
-				rtactasks.insert(pair<string, SuperRTACSession *>(s_ipbuf, srtac));
+				SuperRTACTasksList.insert(pair<string, SuperRTACSession *>(s_ipbuf, srtac));
 			}
 		}
-		map_lock.unlock();
+		Lock_SuperRTACTasksList.unlock();
 
 		return 0;
 
 	} else if (op == "clear_tasks") {
-		map_lock.lock();
+		Lock_SuperRTACTasksList.lock();
 		// See stackoverflow.com question 14511860
-		for (auto thistask = rtactasks.begin(); thistask != rtactasks.end(); ) {
+		for (auto thistask = SuperRTACTasksList.begin(); thistask != SuperRTACTasksList.end(); ) {
 			if (thistask->second->Status() >= 0x80 ) {
 				delete thistask->second;
-				thistask = rtactasks.erase(thistask);
+				thistask = SuperRTACTasksList.erase(thistask);
 				taskscount--;
 			} else
 				++thistask;
 		}
 
-		map_lock.unlock();
+		Lock_SuperRTACTasksList.unlock();
 		return 0;
 	}
 
