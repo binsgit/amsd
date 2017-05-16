@@ -4,11 +4,7 @@
 
 #include "External.hpp"
 
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
-
-
+#include <curl/easy.h>
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
