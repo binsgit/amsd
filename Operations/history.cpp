@@ -20,6 +20,9 @@
 
 struct pCtx_i {
     time_t LastDataCollection;
+    time_t TimeOffset;
+    time_t StartTime;
+    time_t EndTime;
     pthread_mutex_t Lock = PTHREAD_MUTEX_INITIALIZER;
 
     map<int64_t, int64_t> *times_elapsed;
@@ -38,7 +41,7 @@ static void *getSummary(void *userp){
 		SQLAutomator::SQLite3 *thisdb = db_summary.OpenSQLite3();
 
 		thisdb->Prepare("SELECT Time, SUM(Elapsed) FROM summary WHERE Time >= ?1 GROUP BY Time");
-		thisdb->Bind(1, thisCtx->LastDataCollection-864000);
+		thisdb->Bind(1, thisCtx->LastDataCollection - thisCtx->TimeOffset);
 
 		while (thisdb->Step() == SQLITE_ROW) {
 			int64_t thistime = thisdb->Column(0);
@@ -49,7 +52,6 @@ static void *getSummary(void *userp){
 
 		delete thisdb;
 	} catch (Reimu::Exception e) {
-
 
 	}
 
@@ -64,7 +66,7 @@ static void *getPool(void *userp) {
 		SQLAutomator::SQLite3 *thisdb = db_pool.OpenSQLite3();
 
 		thisdb->Prepare("SELECT Time, URL, SUM(DifficultyAccepted) FROM pool WHERE Time >= ?1 GROUP BY Time, URL");
-		thisdb->Bind(1, thisCtx->LastDataCollection - 864000);
+		thisdb->Bind(1, thisCtx->LastDataCollection - thisCtx->TimeOffset);
 
 		while (thisdb->Step() == SQLITE_ROW) {
 			thisCtx->TimeTemp->push_back((int64_t)thisdb->Column(0));
@@ -93,6 +95,14 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 
 	string type(json_string_value(j_type));
 
+
+	json_t *j_starttime = json_object_get(in_data, "start_time");
+	json_t *j_endtime = json_object_get(in_data, "end_time");
+	json_t *j_timeoffset = json_object_get(in_data, "time_offset");
+
+	if ((!j_starttime || !j_endtime) && !j_timeoffset)
+		return -1;
+
 	if (type == "hashrate") {
 
 		struct pCtx_i *thisCtx = (struct pCtx_i *)malloc(sizeof(struct pCtx_i));
@@ -101,6 +111,13 @@ int AMSD::Operations::history(json_t *in_data, json_t *&out_data){
 		thisCtx->sorter = new map<string, map<int64_t, double>>;
 		thisCtx->URLTemp = new vector<string>;
 		thisCtx->TimeTemp = new vector<time_t>;
+
+		if (json_is_integer(j_timeoffset))
+			thisCtx->TimeOffset = json_integer_value(j_timeoffset);
+		else
+			thisCtx->TimeOffset = 86400 * 7;
+
+		// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 		thisCtx->LastDataCollection = RuntimeData::TimeStamp::LastDataCollection();
 

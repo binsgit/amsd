@@ -47,11 +47,11 @@ void DataProcessing::Report::CollectData() {
 		SQLAutomator::SQLite3 *thispooldb = db_pool.OpenSQLite3();
 
 		thispooldb->Prepare("SELECT URL, User, DifficultyAccepted FROM pool WHERE "
-					   "LENGTH(URL) > 7 AND "
-					   "Time > ?1 AND "
-					   "Addr = ?2 AND "
-					   "Port = ?3 "
-					   "GROUP BY URL");
+					    "LENGTH(URL) > 7 AND "
+					    "Time > ?1 AND "
+					    "Addr = ?2 AND "
+					    "Port = ?3 "
+					    "GROUP BY URL");
 
 		for (auto const &ctl: Farm0.Controllers) {
 			thispooldb->Bind(1, RuntimeData::TimeStamp::LastDataCollection()-86400);
@@ -101,6 +101,20 @@ void DataProcessing::Report::CollectData() {
 string DataProcessing::Report::HTML() {
 	char sbuf16[16];
 
+	double coins_mined = 0;
+	double glob_hashrate = 0;
+
+	try {
+		auto blockchain_stats = External::BlockChainAPI();
+		coins_mined = blockchain_stats["n_btc_mined"];
+		glob_hashrate = blockchain_stats["hash_rate"];
+	} catch (Reimu::Exception e) {
+		coins_mined = 0;
+		glob_hashrate = 0;
+	}
+
+	LogD("coins_mined = %lf, glob_hashrate = %lf", coins_mined, glob_hashrate);
+
 	string ret = "<html>"
 			     "<head>"
 			     "<meta charset=\"UTF-8\">"
@@ -122,9 +136,12 @@ string DataProcessing::Report::HTML() {
 			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(RuntimeData::TimeStamp::LastDataCollection()) + "</th></tr>"
 			     "<tr><th>总算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
 			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
-			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr></tbody></table><h4><b>矿池信息</b></h4>"
+			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr>"
+			     "<tr><th>机器总功率</th><th>" + to_string(Farm0.Modules * 1.35) + " kWh</th></tr>"
+			     "</tbody></table><h4><b>矿池信息</b></h4>"
 			     "<table><thead>"
-			     "<tr><th>URL</th><th>用户</th><th>算力</th>"
+			     "<tr><th>URL</th><th>用户</th><th>算力</th><th>获得的BTC数量</th>"
+//			     "<th>机器总功率</th>"
 //					   "<th>关联的控制器数量</th><th>关联的模组数量</th>"
 			     "</tr>"
 			     "</thead><tbody>";
@@ -137,6 +154,13 @@ string DataProcessing::Report::HTML() {
 		ret += pool.second.User;
 		ret += "</th><th>";
 		ret += hashrate_h(pool.second.GHS*1000);
+		ret += "</th><th>";
+		long double btcs = ((long double)coins_mined * (long double)pool.second.GHS/1000 ) / ( (long double)pow(10,5) * (long double)glob_hashrate );
+
+		LogD("btcs: %lf", (double)btcs);
+		ret += to_string((double)btcs);
+//		ret += "</th><th>";
+//		ret += "</th><th>";
 //		ret += "</th><th>";
 //
 //		ret += "</th><th>";

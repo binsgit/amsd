@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 		LogE("amsd: Fatal: libssh2 initialization failed!!\n");
 		exit(2);
 	}
-
+	curl_global_init(CURL_GLOBAL_ALL);
 	sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
 	sqlite3_initialize();
 

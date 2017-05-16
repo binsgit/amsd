@@ -72,6 +72,7 @@
 #include "Runtime/Runtime.hpp"
 #include "Services/Services.hpp"
 #include "User/User.hpp"
+#include "External/External.hpp"
 #include "Operations/Operations.hpp"
 #include "DataProcessing/DataProcessing.hpp"
 

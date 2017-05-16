@@ -19,7 +19,7 @@ project(amsd)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g")
 
-set(SOURCE_FILES amsd.cpp amsd.hpp ssh.cpp Operations/Operations.cpp Operations/fwver.cpp DataProcessing/CgMinerAPI.cpp Operations/issues.cpp Operations/supertac.cpp utils.cpp Operations/controller.cpp Runtime/DataBase.cpp lib/rfc1342.cpp lib/rfc1342.hpp lib/rfc3339.cpp lib/rfc3339.hpp Operations/mailreport.cpp Operations/config.cpp Operations/status.cpp Operations/farmap.cpp Operations/glimpse.cpp Operations/history.cpp Operations/ascset.cpp Operations/rawapi.cpp Operations/user.cpp Operations/login.cpp Operations/version.cpp Operations/jsonreport.cpp compatibility.hpp compatibility.cpp Runtime/RuntimeData.cpp Operations/Operations.hpp Runtime/Runtime.hpp DataProcessing/DataProcessing.hpp DataProcessing/CrapNemesis.cpp DataProcessing/Collector.cpp DataProcessing/Issue.cpp DataProcessing/AvalonError.cpp DataProcessing/Report.cpp Runtime/Config.cpp User/User.hpp User/Login.cpp User/Auth.cpp Services/Services.cpp Services/Services.hpp Services/API_Common.cpp Services/API_UnixSocket.cpp Services/API_TCP.cpp Services/DataCollector.cpp Services/MailReport.cpp User/User.cpp Operations/poool.cpp)
+set(SOURCE_FILES amsd.cpp amsd.hpp ssh.cpp Operations/Operations.cpp Operations/fwver.cpp DataProcessing/CgMinerAPI.cpp Operations/issues.cpp Operations/supertac.cpp utils.cpp Operations/controller.cpp Runtime/DataBase.cpp lib/rfc1342.cpp lib/rfc1342.hpp lib/rfc3339.cpp lib/rfc3339.hpp Operations/mailreport.cpp Operations/config.cpp Operations/status.cpp Operations/farmap.cpp Operations/glimpse.cpp Operations/history.cpp Operations/ascset.cpp Operations/rawapi.cpp Operations/user.cpp Operations/login.cpp Operations/version.cpp Operations/jsonreport.cpp compatibility.hpp compatibility.cpp Runtime/RuntimeData.cpp Operations/Operations.hpp Runtime/Runtime.hpp DataProcessing/DataProcessing.hpp DataProcessing/CrapNemesis.cpp DataProcessing/Collector.cpp DataProcessing/Issue.cpp DataProcessing/AvalonError.cpp DataProcessing/Report.cpp Runtime/Config.cpp User/User.hpp User/Login.cpp User/Auth.cpp Services/Services.cpp Services/Services.hpp Services/API_Common.cpp Services/API_UnixSocket.cpp Services/API_TCP.cpp Services/DataCollector.cpp Services/MailReport.cpp User/User.cpp Operations/poool.cpp External/External.hpp External/BlockChainAPI.cpp)
 
 add_executable(amsd ${SOURCE_FILES})
 add_executable(amsd_cli amsd_cli.cpp)
@@ -27,6 +27,6 @@ add_executable(ams_cgi ams_cgi.cpp)
 
 target_link_libraries(ams_cgi)
 target_link_libraries(amsd_cli jansson)
-target_link_libraries(amsd Reimu pthread jansson ssh2 sqlite3 event curl b64 crypto)
+target_link_libraries(amsd Reimu pthread jansson ssh2 sqlite3 event curl b64 crypto curl)
 
 install(TARGETS amsd_cli amsd DESTINATION bin)
