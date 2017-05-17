@@ -183,6 +183,10 @@ int AMSD::Database::Init() {
 					 {"Elapsed", INTEGER}});
 
 	for (int j=0; j<4; j++) {
+		db_module_avalon7.InsertColumn({"PAIRS_"+to_string(j), INTEGER});
+	}
+
+	for (int j=0; j<4; j++) {
 		db_module_avalon7.InsertColumn({"MW_"+to_string(j), INTEGER});
 	}
 

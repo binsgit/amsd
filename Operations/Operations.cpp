@@ -58,6 +58,7 @@ int AMSD::Operations::Init() {
 	Register("rawapi", &rawapi);
 	Register("login", &login, 0);
 	Register("version", &version, 0);
+	Register("poool", &poool, 0);
 	
 	return 0;
 }

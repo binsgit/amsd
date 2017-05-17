@@ -115,6 +115,7 @@ string DataProcessing::Report::HTML() {
 
 	LogD("coins_mined = %lf, glob_hashrate = %lf", coins_mined, glob_hashrate);
 
+
 	string ret = "<html>"
 			     "<head>"
 			     "<meta charset=\"UTF-8\">"
@@ -137,7 +138,8 @@ string DataProcessing::Report::HTML() {
 			     "<tr><th>总算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
 			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
 			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr>"
-			     "<tr><th>机器总功率</th><th>" + to_string(Farm0.Modules * 1.35) + " kWh</th></tr>"
+			     "<tr><th>机器总功耗</th><th>" + to_string(Farm0.Modules * 1.35) + " kWh</th></tr>"
+			     "<tr><th>获得的BTC数量</th><th>" + to_string(((long double)coins_mined * (long double)Farm0.MHS/1000000 ) / ( (long double)pow(10,5) * (long double)glob_hashrate )) + "</th></tr>"
 			     "</tbody></table><h4><b>矿池信息</b></h4>"
 			     "<table><thead>"
 			     "<tr><th>URL</th><th>用户</th><th>算力</th><th>获得的BTC数量</th>"

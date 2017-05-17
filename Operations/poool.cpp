@@ -18,6 +18,188 @@
 
 #include "Operations.hpp"
 
+
+static shared_timed_mutex GlobalLock;
+
+class ctl_info_ctx {
+public:
+    string addr;
+    time_t elapsed;
+    string pool_url;
+    string pool_worker;
+    uint mods_count;
+    string mod_type;
+    double mhs;
+    double mhsav;
+};
+
+static map<string, ctl_info_ctx> CtlInfoRaw;
+static shared_timed_mutex CtlInfoRaw_Lock;
+
+static multimap<time_t, uint> sortby_elapsed;
+static multimap<string, uint> sortby_pool_url;
+static multimap<string, uint> sortby_pool_worker;
+static multimap<uint, uint> sortby_mods_count;
+static multimap<string, uint> sortby_mod_type;
+static multimap<double, uint> sortby_mhs;
+static multimap<double, uint> sortby_mhsav;
+
+
+static void *getPoolData(void *userp){
+	try {
+		SQLAutomator::SQLite3 *thisdb = db_pool.OpenSQLite3();
+		thisdb->Prepare("SELECT Addr, Port, URL, User from pool WHERE Time = ?1");
+
+		thisdb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+
+		void *remote_inaddr;
+		uint16_t remote_port;
+
+		ctl_info_ctx thisctx;
+
+		while (thisdb->Step() == SQLITE_ROW) {
+			remote_inaddr = (void *)sqlite3_column_blob(thisdb->SQLite3Statement, 0);
+			remote_port = (uint16_t)sqlite3_column_int(thisdb->SQLite3Statement, 1);
+
+			IPEndPoint thisep(remote_inaddr, 4, remote_port);
+
+			thisctx.addr = thisep.ToString();
+			thisctx.pool_url = thisdb->Column(2).operator std::string();
+			thisctx.pool_worker = thisdb->Column(3).operator std::string();
+
+			CtlInfoRaw_Lock.lock();
+			ctl_info_ctx &tgtctx = CtlInfoRaw[thisctx.addr];
+			tgtctx.addr = thisctx.addr;
+			tgtctx.pool_url = thisctx.pool_url;
+			tgtctx.pool_worker = thisctx.pool_worker;
+			CtlInfoRaw_Lock.unlock();
+
+		}
+
+	} catch (Reimu::Exception e) {
+
+	}
+}
+
+static void *getModData(void *userp){
+	try {
+		SQLAutomator::SQLite3 *thisdb = db_module_avalon7.OpenSQLite3();
+		thisdb->Prepare("SELECT Addr, Port, Ver FROM module_avalon7 WHERE Time = ?1");
+
+		thisdb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+
+		void *remote_inaddr;
+		uint16_t remote_port;
+
+		ctl_info_ctx thisctx;
+
+		while (thisdb->Step() == SQLITE_ROW) {
+			remote_inaddr = (void *)sqlite3_column_blob(thisdb->SQLite3Statement, 0);
+			remote_port = (uint16_t)sqlite3_column_int(thisdb->SQLite3Statement, 1);
+
+			IPEndPoint thisep(remote_inaddr, 4, remote_port);
+
+			thisctx.addr = thisep.ToString();
+			thisctx.mod_type = thisdb->Column(2).operator std::string();
+
+
+			CtlInfoRaw_Lock.lock();
+			ctl_info_ctx &tgtctx = CtlInfoRaw[thisctx.addr];
+			if (tgtctx.mod_type.empty())
+				tgtctx.mod_type = thisctx.mod_type;
+			tgtctx.mods_count++;
+			CtlInfoRaw_Lock.unlock();
+
+		}
+
+	} catch (Reimu::Exception e) {
+
+	}
+}
+
+
+static void *getSummary(void *userp){
+	try {
+		SQLAutomator::SQLite3 *thisdb = db_summary.OpenSQLite3();
+		thisdb->Prepare("SELECT Addr, Port, Elapsed, MHS5s, MHSav FROM summary WHERE Time = ?1");
+
+		thisdb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+
+		void *remote_inaddr;
+		uint16_t remote_port;
+		ctl_info_ctx thisctx;
+
+		while (thisdb->Step() == SQLITE_ROW) {
+			remote_inaddr = (void *)sqlite3_column_blob(thisdb->SQLite3Statement, 0);
+			remote_port = (uint16_t)sqlite3_column_int(thisdb->SQLite3Statement, 1);
+
+			IPEndPoint thisep(remote_inaddr, 4, remote_port);
+
+			thisctx.addr = thisep.ToString();
+			thisctx.elapsed = thisdb->Column(2);
+			thisctx.mhs = thisdb->Column(3);
+			thisctx.mhsav = thisdb->Column(4);
+
+
+			CtlInfoRaw_Lock.lock();
+			ctl_info_ctx &tgtctx = CtlInfoRaw[thisctx.addr];
+			tgtctx.elapsed = thisctx.elapsed;
+			tgtctx.mhs = thisctx.mhs;
+			tgtctx.mhsav = thisctx.mhsav;
+			CtlInfoRaw_Lock.unlock();
+
+		}
+
+	} catch (Reimu::Exception e) {
+
+	}
+}
+
+static void sortData() {
+
+	size_t j = 0;
+
+	for (auto &thisctx : CtlInfoRaw) {
+
+		sortby_elapsed.insert(pair<time_t, uint>(thisctx.second.elapsed, j));
+		sortby_pool_url.insert(pair<string, uint>(thisctx.second.pool_url, j));
+		sortby_pool_worker.insert(pair<string, uint>(thisctx.second.pool_worker, j));
+		sortby_mod_type.insert(pair<string, uint>(thisctx.second.mod_type, j));
+		sortby_mods_count.insert(pair<time_t, uint>(thisctx.second.mods_count, j));
+		sortby_mhs.insert(pair<double, uint>(thisctx.second.mhs, j));
+		sortby_mhsav.insert(pair<double, uint>(thisctx.second.mhsav, j));
+
+		j++;
+	}
+
+}
+
+static void collectData() {
+
+	sortby_elapsed.clear();
+	sortby_pool_url.clear();
+	sortby_pool_worker.clear();
+	sortby_mod_type.clear();
+	sortby_mods_count.clear();
+	sortby_mhs.clear();
+	sortby_mhsav.clear();
+	CtlInfoRaw.clear();
+
+
+
+	pthread_t tid_getpool, tid_getmodata, tid_getsummary;
+
+	pthread_create(&tid_getpool, NULL, &getPoolData, NULL);
+	pthread_create(&tid_getmodata, NULL, &getModData, NULL);
+	pthread_create(&tid_getsummary, NULL, &getSummary, NULL);
+
+	pthread_join(tid_getmodata, NULL);
+	pthread_join(tid_getpool, NULL);
+	pthread_join(tid_getsummary, NULL);
+
+	sortData();
+}
+
 int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 
 	json_t *j_op = json_object_get(in_data, "op");
@@ -25,7 +207,11 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 	json_t *j_poolcfg;
 	json_t *j_addr;
 	json_t *j_pool1url, *j_pool1user, *j_pool1pw, *j_pool2url, *j_pool2user, *j_pool2pw;
-
+	json_t *j_pd_tbl_entry;
+	json_t *j_pd_tbl;
+	json_t *j_pd;
+	json_t *j_pd_sortinfos;
+	json_t *j_pd_sortinfo;
 
 	string shell_cmd;
 
@@ -35,7 +221,83 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 
 	string op(json_string_value(j_op));
 
-	if (op == "modify") {
+	if (op == "info") {
+		GlobalLock.lock();
+
+		collectData();
+
+		j_pd_tbl = json_array();
+		j_pd_sortinfos = json_object();
+
+		for (auto &thisctxx : CtlInfoRaw) {
+			auto &tsctx = thisctxx.second;
+			j_pd_tbl_entry = json_object();
+			json_object_set_new(j_pd_tbl_entry, "target", json_string(tsctx.addr.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "elapsed", json_integer(tsctx.elapsed));
+			json_object_set_new(j_pd_tbl_entry, "pool_url", json_string(tsctx.pool_url.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "pool_worker", json_string(tsctx.pool_worker.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "mhs", json_real(tsctx.mhs));
+			json_object_set_new(j_pd_tbl_entry, "mhsav", json_real(tsctx.mhsav));
+			json_object_set_new(j_pd_tbl_entry, "mod_type", json_string(tsctx.mod_type.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "mods_count", json_integer(tsctx.mods_count));
+
+			json_array_append_new(j_pd_tbl, j_pd_tbl_entry);
+		}
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_mhs) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "mhs", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_mhsav) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "mhsav", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_elapsed) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "elapsed", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_pool_url) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "pool_url", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_pool_worker) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "pool_worker", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_mod_type) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "mod_type", j_pd_sortinfo);
+
+		j_pd_sortinfo = json_array();
+		for (auto &thisctxx : sortby_mods_count) {
+			auto tsx = thisctxx.second;
+			json_array_append_new(j_pd_sortinfo, json_integer(tsx));
+		}
+		json_object_set_new(j_pd_sortinfos, "mods_count", j_pd_sortinfo);
+
+		json_object_set_new(out_data, "table", j_pd_tbl);
+		json_object_set_new(out_data, "sortinfo", j_pd_sortinfos);
+
+		GlobalLock.unlock();
+	} else if (op == "modify") {
 		j_nodes = json_object_get(in_data, "nodes");
 		j_poolcfg = json_object_get(in_data, "poolcfg");
 
@@ -88,6 +350,7 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 		}
 
 		shell_cmd += "uci commit\n";
+		shell_cmd += "/etc/init.d/cgminer restart\n";
 
 		size_t j;
 
