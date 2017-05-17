@@ -65,17 +65,19 @@ int AMSD::Services::API::ParseRequest(char *inputstr, string &outputstr) {
 
 	j_auth = json_object_get(i_json_root, "auth");
 
-	if (!json_is_string(j_auth)) {
-		if (thisopt.second) {
+
+	if (thisopt.second) {
+		if (!json_is_string(j_auth)) {
 			LogE("amsd: Services::API::ParseRequest: request %p: error: operation `%s' requires authentication", (void *)inputstr, operation.c_str());
 			goto autherr;
-		}
-	} else {
-		if (AMSD::User::Auth(string(json_string_value(j_auth)), NULL)) {
-			LogE("amsd: Services::API::ParseRequest: request %p: error: operation `%s' authentication failed", (void *)inputstr, operation.c_str());
-			goto autherr;
+		} else {
+			if (AMSD::User::Auth(string(json_string_value(j_auth)), NULL)) {
+				LogE("amsd: Services::API::ParseRequest: request %p: error: operation `%s' authentication failed", (void *)inputstr, operation.c_str());
+				goto autherr;
+			}
 		}
 	}
+
 
 	LogD("amsd: Services::API::ParseRequest: request %p: executing operation `%s' at %p", (void *)inputstr, operation.c_str(),
 		(void *)op);
