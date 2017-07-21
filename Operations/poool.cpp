@@ -26,7 +26,11 @@ public:
     string addr;
     time_t elapsed;
     string pool_url;
+    string pool1_url;
+    string pool2_url;
     string pool_worker;
+    string pool1_worker;
+    string pool2_worker;
     uint mods_count;
     string mod_type;
     double mhs;
@@ -48,14 +52,12 @@ static multimap<double, uint> sortby_mhsav;
 static void *getPoolData(void *userp){
 	try {
 		SQLAutomator::SQLite3 *thisdb = db_pool.OpenSQLite3();
-		thisdb->Prepare("SELECT Addr, Port, URL, User from pool WHERE Time = ?1");
+		thisdb->Prepare("SELECT Addr, Port, URL, User, PoolID from pool WHERE Time = ?1");
 
 		thisdb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
 
 		void *remote_inaddr;
 		uint16_t remote_port;
-
-		ctl_info_ctx thisctx;
 
 		while (thisdb->Step() == SQLITE_ROW) {
 			remote_inaddr = (void *)sqlite3_column_blob(thisdb->SQLite3Statement, 0);
@@ -63,15 +65,25 @@ static void *getPoolData(void *userp){
 
 			IPEndPoint thisep(remote_inaddr, 4, remote_port);
 
-			thisctx.addr = thisep.ToString();
-			thisctx.pool_url = thisdb->Column(2).operator std::string();
-			thisctx.pool_worker = thisdb->Column(3).operator std::string();
+			int poolid = thisdb->Column(4);
+			string addr = thisep.ToString();
 
 			CtlInfoRaw_Lock.lock();
-			ctl_info_ctx &tgtctx = CtlInfoRaw[thisctx.addr];
-			tgtctx.addr = thisctx.addr;
-			tgtctx.pool_url = thisctx.pool_url;
-			tgtctx.pool_worker = thisctx.pool_worker;
+			ctl_info_ctx &tgtctx = CtlInfoRaw[addr];
+			tgtctx.addr = addr;
+
+			if (poolid == 0) {
+				tgtctx.pool_url = thisdb->Column(2).operator std::string();
+				tgtctx.pool_worker = thisdb->Column(3).operator std::string();
+			} else if (poolid == 1) {
+				tgtctx.pool1_url = thisdb->Column(2).operator std::string();
+				tgtctx.pool1_worker = thisdb->Column(3).operator std::string();
+			} if (poolid == 2) {
+				tgtctx.pool2_url = thisdb->Column(2).operator std::string();
+				tgtctx.pool2_worker = thisdb->Column(3).operator std::string();
+			}
+
+
 			CtlInfoRaw_Lock.unlock();
 
 		}
@@ -105,8 +117,8 @@ static void *getModData(void *userp){
 
 			CtlInfoRaw_Lock.lock();
 			ctl_info_ctx &tgtctx = CtlInfoRaw[thisctx.addr];
-			if (tgtctx.mod_type.empty())
-				tgtctx.mod_type = thisctx.mod_type;
+			if (tgtctx.mod_type.empty() && thisctx.mod_type.size() >= 3)
+				tgtctx.mod_type = thisctx.mod_type.substr(0,3);
 			tgtctx.mods_count++;
 			CtlInfoRaw_Lock.unlock();
 
@@ -207,6 +219,7 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 	json_t *j_poolcfg;
 	json_t *j_addr;
 	json_t *j_pool1url, *j_pool1user, *j_pool1pw, *j_pool2url, *j_pool2user, *j_pool2pw;
+	json_t *j_pool3url, *j_pool3user, *j_pool3pw;
 	json_t *j_pd_tbl_entry;
 	json_t *j_pd_tbl;
 	json_t *j_pd;
@@ -235,7 +248,11 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 			json_object_set_new(j_pd_tbl_entry, "target", json_string(tsctx.addr.c_str()));
 			json_object_set_new(j_pd_tbl_entry, "elapsed", json_integer(tsctx.elapsed));
 			json_object_set_new(j_pd_tbl_entry, "pool_url", json_string(tsctx.pool_url.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "pool1_url", json_string(tsctx.pool1_url.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "pool2_url", json_string(tsctx.pool2_url.c_str()));
 			json_object_set_new(j_pd_tbl_entry, "pool_worker", json_string(tsctx.pool_worker.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "pool1_worker", json_string(tsctx.pool1_worker.c_str()));
+			json_object_set_new(j_pd_tbl_entry, "pool2_worker", json_string(tsctx.pool2_worker.c_str()));
 			json_object_set_new(j_pd_tbl_entry, "mhs", json_real(tsctx.mhs));
 			json_object_set_new(j_pd_tbl_entry, "mhsav", json_real(tsctx.mhsav));
 			json_object_set_new(j_pd_tbl_entry, "mod_type", json_string(tsctx.mod_type.c_str()));
@@ -317,11 +334,17 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 			shell_cmd += "uci set cgminer.default.pool1url='";
 			shell_cmd += json_string_value(j_pool1url);
 			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool1url";
+			shell_cmd += "'\n";
 		}
 
 		if (json_is_string(j_pool1user)) {
 			shell_cmd += "uci set cgminer.default.pool1user='";
 			shell_cmd += json_string_value(j_pool1user);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool1user'";
 			shell_cmd += "'\n";
 		}
 
@@ -329,11 +352,17 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 			shell_cmd += "uci set cgminer.default.pool1pw='";
 			shell_cmd += json_string_value(j_pool1pw);
 			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool1pw'";
+			shell_cmd += "'\n";
 		}
 
 		if (json_is_string(j_pool2url)) {
 			shell_cmd += "uci set cgminer.default.pool2url='";
 			shell_cmd += json_string_value(j_pool2url);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool2url'";
 			shell_cmd += "'\n";
 		}
 
@@ -341,11 +370,44 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 			shell_cmd += "uci set cgminer.default.pool2user='";
 			shell_cmd += json_string_value(j_pool2user);
 			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool2user'";
+			shell_cmd += "'\n";
 		}
 
 		if (json_is_string(j_pool2pw)) {
 			shell_cmd += "uci set cgminer.default.pool2pw='";
 			shell_cmd += json_string_value(j_pool2pw);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool2pw'";
+			shell_cmd += "'\n";
+		}
+
+		if (json_is_string(j_pool3url)) {
+			shell_cmd += "uci set cgminer.default.pool3url='";
+			shell_cmd += json_string_value(j_pool3url);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool3url'";
+			shell_cmd += "'\n";
+		}
+
+		if (json_is_string(j_pool3user)) {
+			shell_cmd += "uci set cgminer.default.pool3user='";
+			shell_cmd += json_string_value(j_pool3user);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool3user'";
+			shell_cmd += "'\n";
+		}
+
+		if (json_is_string(j_pool3pw)) {
+			shell_cmd += "uci set cgminer.default.pool3pw='";
+			shell_cmd += json_string_value(j_pool3pw);
+			shell_cmd += "'\n";
+		} else {
+			shell_cmd += "uci delete cgminer.default.pool3pw'";
 			shell_cmd += "'\n";
 		}
 

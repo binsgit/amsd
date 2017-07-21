@@ -114,6 +114,7 @@ namespace AMSD {
 	    public:
 		size_t Modules = 0;
 		long double MHS = 0;
+		map<string, int> ModsType;
 
 		vector<Controller> Controllers;
 		map<pair<string, string>, Pool> Pools;
@@ -127,6 +128,7 @@ namespace AMSD {
 	    Report(string farm_name, bool collect_pool=1);
 
 	    string HTML();
+	    string HTML_Special();
 
 	private:
 	    void CollectData();
@@ -137,8 +139,8 @@ namespace AMSD {
 	public:
 	    enum AvalonErrNum {
 		Idle = 1, CRCFailed = 2, NoFan = 4, Lock = 8, APIFIFOverflow = 16, RBOverflow = 32, TooHot = 64, HotBefore = 128,
-		LoopFailed = 256, CoreTestFailed = 512, InvaildPMU = 1024, PGFailed = 2048, NTCErr = 4096, VolErr = 8192,
-		VCoreErr = 16384, PMUCrcFailed = 32768, InvaildPLLValue = 65536,
+		LoopFailed = 256, CoreTestFailed = 512, InvalidPMU = 1024, PGFailed = 2048, NTCErr = 4096, VolErr = 8192,
+		VCoreErr = 16384, PMUCrcFailed = 32768, InvalidPLLValue = 65536,
 		Error_WU = 0x20000, Error_MW = 0x40000, Error_CRC = 0x80000, Error_DH = 0x100000
 	    };
 

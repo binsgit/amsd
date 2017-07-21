@@ -81,8 +81,8 @@
 #include "lib/rfc1342.hpp"
 #include "lib/rfc3339.hpp"
 
-#define AMSD_VERSION		2.01
-
+#define AMSD_VERSION		2.1
+#define AMSD_VERSION_TYPE	1
 
 using namespace std;
 using namespace AMSD;

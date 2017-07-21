@@ -23,7 +23,8 @@ int AMSD::Operations::version(json_t *in_data, json_t *&out_data) {
 	json_t *j_version = json_object();
 	json_t *j_amsd_version = json_real(AMSD_VERSION);
 
-	json_object_set_new(j_version, "amsd", j_amsd_version);
+	json_object_set_new(j_version, "number", j_amsd_version);
+	json_object_set_new(j_version, "type", json_integer(AMSD_VERSION_TYPE));
 	json_object_set_new(out_data, "version", j_version);
 
 	return 0;

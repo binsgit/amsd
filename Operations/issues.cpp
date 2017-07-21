@@ -73,20 +73,27 @@ static void *getAvalonErrors(void *userp){
 				json_array_append_new(j_echus, json_integer(ECHU[i]));
 			}
 
-			json_object_set_new(j_issue, "crc", j_crcs);
-			json_object_set_new(j_issue, "echu" , j_echus);
-
-			UniversalType verbuf = thisdb->Column(12);
-
 			double wubuf = thisdb->Column(13);
 			double dhbuf = thisdb->Column(14);
+			UniversalType verbuf = thisdb->Column(12);
+
+			uint64_t exterrs = DataProcessing::AvalonError::DetectExtErrs((char *)verbuf.StringStore->c_str(), wubuf, dhbuf,
+										      CRC[0]+CRC[1]+CRC[2]+CRC[3]);
+
+			exterrs |= ECHU[0]|ECHU[1]|ECHU[2]|ECHU[3];
+
+			json_object_set_new(j_issue, "crc", j_crcs);
+			json_object_set_new(j_issue, "echu" , j_echus);
+			json_object_set_new(j_issue, "echu_ored" , json_integer((int)exterrs));
+
+
+
+
 			string sdna = strbindna(((pair<void *, size_t>)thisdb->Column(15)).first);
 
 			json_object_set_new(j_issue, "dna", json_string(sdna.c_str()));
 
-			string sebuf = DataProcessing::AvalonError::ToString(ECHU[0]|ECHU[1]|ECHU[2]|ECHU[3]|
-										    DataProcessing::AvalonError::DetectExtErrs((char *)verbuf.StringStore->c_str(), wubuf, dhbuf,
-																      CRC[0]+CRC[1]+CRC[2]+CRC[3]));
+			string sebuf = DataProcessing::AvalonError::ToString(exterrs);
 
 			json_object_set_new(j_issue, "msg" , json_string(sebuf.c_str()));
 

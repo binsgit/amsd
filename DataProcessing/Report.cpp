@@ -95,6 +95,16 @@ void DataProcessing::Report::CollectData() {
 	if (thismoduledb->Step() == SQLITE_ROW)
 		Farm0.Modules = thismoduledb->Column(0);
 
+	thismoduledb->Prepare("SELECT Ver FROM module_avalon7 WHERE Time = ?1");
+	thismoduledb->Bind(1, RuntimeData::TimeStamp::LastDataCollection());
+
+	while (thismoduledb->Step() == SQLITE_ROW) {
+		string sbuf = thismoduledb->Column(0);
+		if (sbuf.length() > 2) {
+			Farm0.ModsType[sbuf.substr(0,3)]++;
+		}
+	}
+
 	delete thismoduledb;
 }
 
@@ -137,7 +147,7 @@ string DataProcessing::Report::HTML() {
 			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(RuntimeData::TimeStamp::LastDataCollection()) + "</th></tr>"
 			     "<tr><th>总算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
 			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
-			     "<tr><th>模组数量</th><th>" + to_string(Farm0.Modules) + "</th></tr>"
+			     "<tr><th>机器数量</th><th>" + to_string(Farm0.Modules) + "</th></tr>"
 			     "<tr><th>机器总功耗</th><th>" + to_string(Farm0.Modules * 1.35) + " kWh</th></tr>"
 			     "<tr><th>获得的BTC数量</th><th>" + to_string(((long double)coins_mined * (long double)Farm0.MHS/1000000 ) / ( (long double)pow(10,5) * (long double)glob_hashrate )) + "</th></tr>"
 			     "</tbody></table><h4><b>矿池信息</b></h4>"
@@ -161,6 +171,91 @@ string DataProcessing::Report::HTML() {
 
 		LogD("btcs: %lf", (double)btcs);
 		ret += to_string((double)btcs);
+//		ret += "</th><th>";
+//		ret += "</th><th>";
+//		ret += "</th><th>";
+//
+//		ret += "</th><th>";
+		ret += "</th></tr>";
+	}
+
+	ret += "</tbody></table><br><i>Processed in ";
+	snprintf(sbuf16, 15, "%zu.%zu", ProcessTime.tv_sec, ProcessTime.tv_usec);
+	ret += sbuf16;
+	ret += " seconds.</i></body></html>";
+
+	return ret;
+}
+
+string DataProcessing::Report::HTML_Special() {
+	char sbuf16[16];
+
+	double coins_mined = 0;
+	double glob_hashrate = 0;
+
+	try {
+		auto blockchain_stats = External::BlockChainAPI();
+		coins_mined = blockchain_stats["n_btc_mined"];
+		glob_hashrate = blockchain_stats["hash_rate"];
+	} catch (Reimu::Exception e) {
+		coins_mined = 0;
+		glob_hashrate = 0;
+	}
+
+	LogD("coins_mined = %lf, glob_hashrate = %lf", coins_mined, glob_hashrate);
+
+
+	string ret = "<html>"
+			     "<head>"
+			     "<meta charset=\"UTF-8\">"
+			     "<style>"
+			     "th {"
+			     "    border: 1px solid black;"
+			     "    text-align: left;"
+			     "    font-family: Microsoft Yahei;"
+			     "}"
+			     "table {"
+			     "    border-collapse: collapse;"
+			     "    border: 1px solid black;"
+			     "}"
+			     "</style>"
+			     "</head>"
+			     "<body>"
+			     "<h3><b>AMS报告：" + Name + "</b></h3>"
+			     "<h4><b>当前概况</b></h4><table><tbody>"
+			     "<tr><th>数据采集时间</th><th>" + rfc3339_strftime(RuntimeData::TimeStamp::LastDataCollection()) + "</th></tr>"
+			     "<tr><th>24小时平均算力</th><th>" + hashrate_h(Farm0.MHS) + "</th></tr><tr><th>"
+			     "控制器数量</th><th>" + to_string(Farm0.Controllers.size()) + "</th></tr>"
+			     "<tr><th>机器数量</th><th>" + to_string(Farm0.Modules) + "</th></tr>"
+
+			     "</tbody></table><h4><b>机器数量详情</b></h4>"
+			     "<table><thead>"
+			     "<tr><th>型号</th><th>数量</th>"
+			     "</tr>"
+			     "</thead><tbody>";
+
+	for (auto const &tt: Farm0.ModsType) {
+		ret += "<tr><th>";
+		ret += tt.first;
+		ret += "</th><th>";
+		ret += to_string(tt.second);
+		ret += "</th></tr>";
+	}
+
+	ret += "</tbody></table><h4><b>矿池信息</b></h4>"
+		"<table><thead>"
+		"<tr><th>URL</th><th>用户</th><th>24小时平均算力</th>"
+		"</tr>"
+		"</thead><tbody>";
+
+
+	for (auto const &pool: Farm0.Pools) {
+		ret += "<tr><th>";
+		ret += pool.second.URL;
+		ret += "</th><th>";
+		ret += pool.second.User;
+		ret += "</th><th>";
+		ret += hashrate_h(pool.second.GHS*1000);
 //		ret += "</th><th>";
 //		ret += "</th><th>";
 //		ret += "</th><th>";

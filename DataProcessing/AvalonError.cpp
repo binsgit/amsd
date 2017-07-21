@@ -141,7 +141,7 @@ string DataProcessing::AvalonError::ToString(uint64_t ErrNum) {
 	if (ErrNum & CoreTestFailed)
 		errstr += "";
 
-	if (ErrNum & InvaildPMU)
+	if (ErrNum & InvalidPMU)
 		errstr += "没有检测到PMU；";
 
 	if (ErrNum & PGFailed)
@@ -159,7 +159,7 @@ string DataProcessing::AvalonError::ToString(uint64_t ErrNum) {
 	if (ErrNum & PMUCrcFailed)
 		errstr += "PMU通信CRC错误；";
 
-	if (ErrNum & InvaildPLLValue)
+	if (ErrNum & InvalidPLLValue)
 		errstr += "PLL配置检测失败；";
 
 	return errstr;
