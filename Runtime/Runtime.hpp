@@ -17,7 +17,7 @@ extern Kanna::Logging AMSD_Logger;
 using namespace std;
 
 extern Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device,
-	db_module_policy, db_module_avalon7;
+	db_module_policy, db_module_avalon7, db_module_avalon7_ext;
 
 
 namespace AMSD {

@@ -232,6 +232,8 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 	json_t *j_apidata;
 	size_t j;
 
+	SQLAutomator::SQLite3 *modextdb = db_module_avalon7_ext.OpenSQLite3();
+
 	json_array_foreach(j_apidata_array, j, j_apidata) {
 
 		if (!json_is_object(j_apidata)) {
@@ -298,15 +300,38 @@ void DataProcessing::CgMinerAPI::ParseCrap() {
 			sequencedCrap.insert(pair<string, Reimu::UniversalType>("DNA", {&dnabuf2, 8}));
 
 
+			map<string, Reimu::UniversalType> sequencedCrapExt;
+
+			for (auto &tgt: db_module_avalon7_ext.Columns) {
+				auto ref = sequencedCrap.find(tgt.first);
+				if (ref == sequencedCrap.end())
+					continue;
+
+				sequencedCrapExt.insert(pair<string, Reimu::UniversalType>(ref->first, ref->second));
+				sequencedCrap.erase(ref);
+			}
+
+
 
 
 			DestDB->PPB((SQLAutomator::StatementType)(SQLAutomator::INSERT_INTO|SQLAutomator::SqlitePrepared), "module_avalon7", sequencedCrap);
 			cout << DestDB->Statement << endl;
 			DestDB->Step();
+
+			long int lastrowid = sqlite3_last_insert_rowid(DestDB->SQLite3DB);
+			sequencedCrapExt.insert(pair<string, Reimu::UniversalType>("ParentID", lastrowid));
+
 			DestDB->Reset();
+
+			modextdb->PPB((SQLAutomator::StatementType)(SQLAutomator::INSERT_INTO|SQLAutomator::SqlitePrepared), "module_avalon7_ext", sequencedCrapExt);
+			cout << modextdb->Statement << endl;
+			modextdb->Step();
+			modextdb->Reset();
 		}
 
 	}
+
+	delete modextdb;
 
 
 }

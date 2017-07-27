@@ -19,7 +19,7 @@
 #include "../amsd.hpp"
 
 Reimu::SQLAutomator db_controller, db_user, db_issue, db_summary, db_pool, db_device,
-	db_module_policy, db_module_avalon7;
+	db_module_policy, db_module_avalon7, db_module_avalon7_ext;
 
 int AMSD::Database::Init() {
 	db_controller.TableName = "controller";
@@ -182,20 +182,6 @@ int AMSD::Database::Init() {
 					 {"DNA", BLOB},
 					 {"Elapsed", INTEGER}});
 
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"PAIRS_"+to_string(j), INTEGER});
-	}
-
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"MW_"+to_string(j), INTEGER});
-	}
-
-	db_module_avalon7.InsertColumn({"LW", INTEGER});
-
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"MH_"+to_string(j), INTEGER});
-	}
-
 	db_module_avalon7.InsertColumns({{"HW", INTEGER},
 					 {"DH", REAL},
 					 {"Temp", INTEGER},
@@ -203,19 +189,7 @@ int AMSD::Database::Init() {
 					 {"Fan", INTEGER},
 					 {"FanR", INTEGER}});
 
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"Vi_"+to_string(j), INTEGER});
-	}
-
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"Vo_"+to_string(j), INTEGER});
-	}
-
-	for (int j=0; j<4; j++) {
-		for (int k=0; k<6; k++) {
-			db_module_avalon7.InsertColumn({"PLL"+to_string(j)+"_"+to_string(k), INTEGER});
-		}
-	}
+	db_module_avalon7.InsertColumn({"LW", INTEGER});
 
 	db_module_avalon7.InsertColumns({{"GHSmm", REAL},
 					 {"WU", REAL},
@@ -224,59 +198,99 @@ int AMSD::Database::Init() {
 					 {"LED", INTEGER}});
 
 	for (int j=0; j<4; j++) {
-		for (int k=0; k<22; k++) {
-			db_module_avalon7.InsertColumn({"MW"+to_string(j)+"_"+to_string(k), INTEGER});
-		}
-	}
-
-	db_module_avalon7.InsertColumn({"TA", INTEGER});
-
-	for (int j=0; j<4; j++) {
 		db_module_avalon7.InsertColumn({"ECHU_"+to_string(j), INTEGER});
 	}
 
 	db_module_avalon7.InsertColumn({"ECMM", INTEGER});
 
 	for (int j=0; j<4; j++) {
+		db_module_avalon7.InsertColumn({"CRC_"+to_string(j), INTEGER});
+	}
+
+	// ==========================================
+
+	db_module_avalon7_ext.TableName = "module_avalon7_ext";
+	db_module_avalon7_ext.DatabaseURI = AMSD::Config::Path_RuntimeDir + "/" + db_module_avalon7_ext.TableName + ".db";
+
+	db_module_avalon7_ext.InsertColumn({"ParentID", INTEGER});
+
+	for (int j=0; j<4; j++) {
+		db_module_avalon7_ext.InsertColumn({"PAIRS_"+to_string(j), INTEGER});
+	}
+
+	for (int j=0; j<4; j++) {
+		db_module_avalon7_ext.InsertColumn({"MW_"+to_string(j), INTEGER});
+	}
+
+
+
+	for (int j=0; j<4; j++) {
+		db_module_avalon7_ext.InsertColumn({"MH_"+to_string(j), INTEGER});
+	}
+
+
+
+	for (int j=0; j<4; j++) {
+		db_module_avalon7_ext.InsertColumn({"Vi_"+to_string(j), INTEGER});
+	}
+
+	for (int j=0; j<4; j++) {
+		db_module_avalon7_ext.InsertColumn({"Vo_"+to_string(j), INTEGER});
+	}
+
+	for (int j=0; j<4; j++) {
 		for (int k=0; k<6; k++) {
-			db_module_avalon7.InsertColumn({"SF"+to_string(j)+"_"+to_string(k), INTEGER});
+			db_module_avalon7_ext.InsertColumn({"PLL"+to_string(j)+"_"+to_string(k), INTEGER});
+		}
+	}
+
+
+	for (int j=0; j<4; j++) {
+		for (int k=0; k<22; k++) {
+			db_module_avalon7_ext.InsertColumn({"MW"+to_string(j)+"_"+to_string(k), INTEGER});
+		}
+	}
+
+	db_module_avalon7_ext.InsertColumn({"TA", INTEGER});
+
+
+
+	for (int j=0; j<4; j++) {
+		for (int k=0; k<6; k++) {
+			db_module_avalon7_ext.InsertColumn({"SF"+to_string(j)+"_"+to_string(k), INTEGER});
 		}
 	}
 
 	for (int j=0; j<2; j++) {
-		db_module_avalon7.InsertColumn({"PMUV_"+to_string(j), INTEGER});
+		db_module_avalon7_ext.InsertColumn({"PMUV_"+to_string(j), INTEGER});
 	}
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<22; k++) {
-			db_module_avalon7.InsertColumn({"ERATIO"+to_string(j)+"_"+to_string(k), REAL});
+			db_module_avalon7_ext.InsertColumn({"ERATIO"+to_string(j)+"_"+to_string(k), REAL});
 		}
 	}
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<5; k++) {
 			for (int l=0; l<22; l++) { // 可以这很强势
-				db_module_avalon7.InsertColumn({"C_"+to_string(j)+"_0"+to_string(k)+"_"+to_string(l), INTEGER});
+				db_module_avalon7_ext.InsertColumn({"C_"+to_string(j)+"_0"+to_string(k)+"_"+to_string(l), INTEGER});
 			}
 		}
 	}
 
 	for (int j=0; j<4; j++) {
 		for (int k=0; k<22; k++) {
-			db_module_avalon7.InsertColumn({"GHSmm0"+to_string(j)+"_"+to_string(k), REAL});
+			db_module_avalon7_ext.InsertColumn({"GHSmm0"+to_string(j)+"_"+to_string(k), REAL});
 		}
 	}
 
-	db_module_avalon7.InsertColumn({"FM", INTEGER});
-
-	for (int j=0; j<4; j++) {
-		db_module_avalon7.InsertColumn({"CRC_"+to_string(j), INTEGER});
-	}
+	db_module_avalon7_ext.InsertColumn({"FM", INTEGER});
 
 	for (int j=0; j<4; j++) {
 		for (auto const &k : {"L", "H", "A"}) {
 			for (auto const &l : {"C", "T"}) {
-				db_module_avalon7.InsertColumn({"PVT_"+to_string(j)+"_"+k+"_"+l, INTEGER});
+				db_module_avalon7_ext.InsertColumn({"PVT_"+to_string(j)+"_"+k+"_"+l, INTEGER});
 			}
 		}
 	}
@@ -288,7 +302,7 @@ int AMSD::Database::Init() {
 	int fd;
 
 	for (auto *thisdb : {&db_controller, &db_user, &db_issue, &db_summary, &db_pool, &db_device,
-			     &db_module_policy, &db_module_avalon7}) {
+			     &db_module_policy, &db_module_avalon7, &db_module_avalon7_ext}) {
 
 		fprintf(stderr, "amsd: Database::Init(): Processing database %s\n", thisdb->TableName.c_str());
 
