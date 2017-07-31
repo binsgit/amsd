@@ -103,7 +103,7 @@ int AMSD::Database::Init() {
 			       {"Port", INTEGER},
 			       {"PoolID", INTEGER},
 			       {"URL", TEXT},
-			       {"Status", INTEGER},
+			       {"Status", TEXT},
 			       {"Priority", INTEGER},
 			       {"Quota", INTEGER},
 			       {"LongPoll", INTEGER},
