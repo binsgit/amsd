@@ -27,6 +27,6 @@ add_executable(ams_cgi ams_cgi.cpp)
 
 target_link_libraries(ams_cgi)
 target_link_libraries(amsd_cli jansson)
-target_link_libraries(amsd Reimu pthread jansson ssh2 sqlite3 event curl b64 crypto curl)
+target_link_libraries(amsd Reimu Reimu_SimpleSMTP pthread jansson ssh2 sqlite3 event curl b64 crypto curl)
 
 install(TARGETS amsd_cli amsd DESTINATION bin)

@@ -327,6 +327,9 @@ int AMSD::Operations::poool(json_t *in_data, json_t *&out_data){
 		j_pool2url = json_object_get(j_poolcfg, "pool2url");
 		j_pool2user = json_object_get(j_poolcfg, "pool2user");
 		j_pool2pw = json_object_get(j_poolcfg, "pool2pw");
+		j_pool3url = json_object_get(j_poolcfg, "pool3url");
+		j_pool3user = json_object_get(j_poolcfg, "pool3user");
+		j_pool3pw = json_object_get(j_poolcfg, "pool3pw");
 
 		shell_cmd += "#!/bin/sh\n";
 
