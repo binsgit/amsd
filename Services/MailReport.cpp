@@ -54,7 +54,7 @@ void AMSD::Services::MailReport(void *userp) {
 	smtp.SMTP_User = ConfigList["MailReport"]["SMTP_User"];
 	smtp.SMTP_Password = ConfigList["MailReport"]["SMTP_Password"];
 	smtp.Sender = ConfigList["MailReport"]["Mail_From"];
-	smtp.SenderName = rfc1342_encode_utf8("AMS Reporter ~ " + farm_name);
+	smtp.SenderName = rfc1342_encode_utf8("AMS-Reporter - " + farm_name);
 	smtp.DebugCallback = &debug_cb;
 
 
@@ -106,7 +106,7 @@ void AMSD::Services::MailReport(void *userp) {
 	smtp.Sender = ConfigList["MailReport"]["SpecialMail_From"];
 	smtp.SMTP_User = ConfigList["MailReport"]["SpecialSMTP_User"];
 	smtp.SMTP_Password = ConfigList["MailReport"]["SpecialSMTP_Password"];
-	smtp.SenderName = rfc1342_encode_utf8("AMS Reporter ~ " + farm_name);
+	smtp.SenderName = rfc1342_encode_utf8("AMS Reporter - " + farm_name);
 
 	smtp.Body = thisreport.HTML_Special();
 

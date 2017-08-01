@@ -20,6 +20,7 @@ namespace AMSD {
 
 	static int ascset(json_t *in_data, json_t *&out_data);
 	static int config(json_t *in_data, json_t *&out_data);
+	static int ctl_scanner(json_t *in_data, json_t *&out_data);
 	static int controller(json_t *in_data, json_t *&out_data);
 	static int farmap(json_t *in_data, json_t *&out_data);
 	static int fwver(json_t *in_data, json_t *&out_data);
