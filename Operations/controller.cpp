@@ -18,6 +18,8 @@
 
 #include "Operations.hpp"
 
+static shared_timed_mutex GlobalLock;
+
 int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 	json_t *j_op = json_object_get(in_data, "op");
 	string op;
@@ -68,12 +70,15 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 			json_object_set_new(out_data, "controllers", j_controllers);
 
 		} else if (op == "add") {
+
+
 			j_controllers = json_object_get(in_data, "controllers");
 			if (!j_controllers || !json_is_array(j_controllers))
 				return -1;
 
 			timenow = time(NULL);
 
+			GlobalLock.lock();
 			thisdb->Exec("BEGIN");
 
 			thisdb->Prepare("INSERT INTO controller VALUES (?1, ?2, ?3, 7)");
@@ -108,11 +113,13 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 
 			thisdb->Exec("COMMIT");
 
+			GlobalLock.unlock();
 		} else if (op == "del") {
 			j_controllers = json_object_get(in_data, "controllers");
 			if (!j_controllers || !json_is_array(j_controllers))
 				return -1;
 
+			GlobalLock.lock();
 			thisdb->Exec("BEGIN");
 			thisdb->Prepare("DELETE FROM controller WHERE Addr = ?1 AND Port = ?2");
 
@@ -145,9 +152,12 @@ int AMSD::Operations::controller(json_t *in_data, json_t *&out_data){
 			}
 
 			thisdb->Exec("COMMIT");
+			GlobalLock.unlock();
 
 		} else if (op == "wipe") {
+			GlobalLock.lock();
 			thisdb->Exec("TRUNCATE controller");
+			GlobalLock.unlock();
 		}
 
 		delete thisdb;
