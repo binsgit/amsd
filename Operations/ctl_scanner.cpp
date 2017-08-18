@@ -173,6 +173,9 @@ int AMSD::Operations::ctl_scanner(json_t *in_data, json_t *&out_data) {
 		inet_pton(AF_INET, ip_st, &ipst.sin_addr);
 		inet_pton(AF_INET, ip_ed, &iped.sin_addr);
 
+		if (be32toh(ipst.sin_addr.s_addr) >= be32toh(iped.sin_addr.s_addr))
+			return 233;
+
 		ipst.sin_port = htobe16(4028);
 		iped.sin_port = htobe16(4028);
 
