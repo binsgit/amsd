@@ -78,9 +78,19 @@ static void *scanner(void *userp) {
 	memcpy(&curnode, &ipst, sizeof(struct sockaddr_in));
 	curnode.sin_family = AF_INET;
 
-	struct timeval TimeOut = {15, 0};
+	struct timeval TimeOut = {7, 0};
+
+	size_t sb_libev_workaround = 0;
+
 
 	for (size_t i=0; i<ccnt; i++) {
+
+		if (sb_libev_workaround > 48) {
+			event_base_dispatch(eventbase);
+			event_base_free(eventbase);
+			eventbase = event_base_new();
+			sb_libev_workaround = 0;
+		}
 
 		LogD("Checking IPv4 addr %08x", be32toh(curnode.sin_addr.s_addr));
 
@@ -97,6 +107,7 @@ static void *scanner(void *userp) {
 		}
 
 		BE_ADD(curnode.sin_addr.s_addr);
+		sb_libev_workaround++;
 	}
 
 	event_base_dispatch(eventbase);
@@ -172,6 +183,9 @@ int AMSD::Operations::ctl_scanner(json_t *in_data, json_t *&out_data) {
 
 		inet_pton(AF_INET, ip_st, &ipst.sin_addr);
 		inet_pton(AF_INET, ip_ed, &iped.sin_addr);
+
+		if (be32toh(ipst.sin_addr.s_addr) >= be32toh(iped.sin_addr.s_addr))
+			return 233;
 
 		ipst.sin_port = htobe16(4028);
 		iped.sin_port = htobe16(4028);
