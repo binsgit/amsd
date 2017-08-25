@@ -33,6 +33,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include <libReimu_System/libSystem.hpp>
+
+using Reimu::System::IO::PosixFile;
+
 using namespace std;
 
 char *socket_path = (char *)"/tmp/.amsd_socket";
@@ -84,18 +88,20 @@ int main(int argc, char **argv){
 
 	cout << "Content-type: text/json\n\n";
 
-	char *buf = (char *)malloc(16384);
+	PosixFile pf(STDIN_FILENO);
 
-	size_t n = fread(buf, 1, 16382, stdin);
+	auto buf = pf.ReadUntilEOF(1024*1024*5);
 
-	if (n < 1) {
+
+	if (buf.size() < 1) {
 		cout << "{\"rc\": 255, \"msg\":\"no post data\"}" << endl;
 		return 0;
 	}
 
-	buf[n] = 0;
+	buf.push_back(0);
 
-	string ret = req(buf);
+
+	string ret = req((char *)buf.data());
 
 	cout << ret << endl;
 
