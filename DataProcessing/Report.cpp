@@ -2,6 +2,7 @@
 // Created by root on 17-4-5.
 //
 
+#include <cmath>
 #include "DataProcessing.hpp"
 
 DataProcessing::Report::Report(string farm_name, bool collect_pool) {
