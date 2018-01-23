@@ -129,7 +129,7 @@ void Services::API::ConnectionHandler(Services::API::ConCtx *data) {
 	ssize_t rrc = 0;
 
 	while (1) {
-		if (rrc > 1)
+		if (rrc >= 1)
 			if (buf_in[rrc-1] == '\n')
 				break;
 
